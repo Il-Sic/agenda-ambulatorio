@@ -13,11 +13,12 @@ export default defineConfig({
     channel: 'chromium',
     launchOptions: { args: ['--lang=it-IT'] },
   },
+  // The phone goes first: the booking it makes then appears in the staff pages.
   projects: [
+    { name: 'telefono', use: { ...devices['Pixel 7'] } },
     {
       name: 'computer',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 860 } },
     },
-    { name: 'telefono', use: { ...devices['Pixel 7'] } },
   ],
 });
