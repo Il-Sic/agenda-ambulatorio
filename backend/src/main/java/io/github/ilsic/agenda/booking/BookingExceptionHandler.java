@@ -22,6 +22,15 @@ class BookingExceptionHandler {
   }
 
   @ExceptionHandler
+  ProblemDetail appointmentNotFound(AppointmentNotFoundException exception) {
+    return Problems.of(
+        HttpStatus.NOT_FOUND,
+        "appointment-not-found",
+        "Appointment not found",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler
   ProblemDetail appointmentState(AppointmentStateException exception) {
     return Problems.of(
         HttpStatus.CONFLICT,

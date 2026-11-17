@@ -11,5 +11,8 @@ interface DoctorRepository extends JpaRepository<Doctor, Long> {
   Optional<Doctor> findWithSpecialtyById(Long id);
 
   @EntityGraph(attributePaths = "specialty")
+  List<Doctor> findAllByOrderByLastNameAscFirstNameAsc();
+
+  @EntityGraph(attributePaths = "specialty")
   List<Doctor> findBySpecialtyIdOrderByLastNameAscFirstNameAsc(Long specialtyId);
 }

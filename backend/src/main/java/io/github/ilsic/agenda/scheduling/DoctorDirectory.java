@@ -22,6 +22,12 @@ public class DoctorDirectory {
         .orElseThrow(() -> new DoctorNotFoundException(doctorId));
   }
 
+  public List<DoctorSummary> all() {
+    return doctors.findAllByOrderByLastNameAscFirstNameAsc().stream()
+        .map(DoctorSummary::of)
+        .toList();
+  }
+
   public List<DoctorSummary> ofSpecialty(long specialtyId) {
     return doctors.findBySpecialtyIdOrderByLastNameAscFirstNameAsc(specialtyId).stream()
         .map(DoctorSummary::of)
