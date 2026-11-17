@@ -23,6 +23,9 @@
   }, {
     "description" : "What a patient can do without an account",
     "name" : "Booking"
+  }, {
+    "description" : "E-mails produced from booking events",
+    "name" : "Notifications"
   } ],
   "paths" : {
     "/api/v1/auth/me" : {
@@ -625,6 +628,28 @@
         "summary" : "Add a weekly availability window (admin)",
         "tags" : [ "Staff schedule" ]
       }
+    },
+    "/api/v1/staff/notifications" : {
+      "get" : {
+        "operationId" : "latest",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Notification"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List the latest 50 e-mails sent to patients, newest first",
+        "tags" : [ "Notifications" ]
+      }
     }
   },
   "components" : {
@@ -866,6 +891,29 @@
           }
         },
         "required" : [ "field", "message" ]
+      },
+      "Notification" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "recipient" : {
+            "type" : "string"
+          },
+          "sentAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "body", "id", "recipient", "sentAt", "subject" ]
       },
       "Problem" : {
         "type" : "object",
