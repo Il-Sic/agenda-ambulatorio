@@ -40,7 +40,7 @@ class BookingEvents {
             doctor.specialty(),
             appointment.slot().startsAt(),
             appointment.slot().endsAt());
-    // The booking code is the key: events of the same booking stay in order on one partition.
+    // The booking code is the key: events of the same booking land on the same partition.
     outbox.append(Topics.BOOKING_EVENTS, appointment.code(), event.eventId(), event);
   }
 }

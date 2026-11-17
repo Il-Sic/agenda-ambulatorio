@@ -25,7 +25,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class OutboxPublisher {
 
   static final int BATCH_SIZE = 50;
-  private static final Duration SEND_TIMEOUT = Duration.ofSeconds(10);
+  // Longer than the producer's own delivery timeout (see application.yaml): by the time this
+  // gives up, Kafka has given up too, and a late delivery cannot overtake the retry.
+  private static final Duration SEND_TIMEOUT = Duration.ofSeconds(15);
 
   /**
    * SKIP LOCKED makes this safe with several instances of the application: each one takes rows
