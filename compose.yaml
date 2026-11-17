@@ -1,0 +1,37 @@
+name: agenda-ambulatorio
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agenda}
+      POSTGRES_USER: ${POSTGRES_USER:-agenda}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agenda-local-only}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-agenda}
+      DB_USERNAME: ${POSTGRES_USER:-agenda}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-agenda-local-only}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
