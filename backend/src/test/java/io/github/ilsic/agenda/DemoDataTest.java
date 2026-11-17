@@ -67,6 +67,9 @@ class DemoDataTest {
   /** The demo events are written in SQL: this proves the application can still read them. */
   @Test
   void theDemoBookingsAreAnnouncedByEmailThroughKafka() {
+    Long announced = jdbc.sql("SELECT count(*) FROM outbox_event").query(Long.class).single();
+    assertThat(announced).isPositive();
+
     outboxPublisher.publishPending();
 
     await()
@@ -80,7 +83,21 @@ class DemoDataTest {
                             """)
                         .query(Long.class)
                         .single())
-                .isEqualTo(8));
+                .isEqualTo(announced));
+  }
+
+  /**
+   * The demo data is built from the real date. Whatever day it is loaded, a fresh start must show
+   * visits still to come, or the first thing a visitor sees is an empty agenda.
+   */
+  @Test
+  void thereAreAlwaysVisitsStillToCome() {
+    Long upcoming =
+        jdbc.sql("SELECT count(*) FROM appointment WHERE status = 'BOOKED' AND starts_at > now()")
+            .query(Long.class)
+            .single();
+
+    assertThat(upcoming).isGreaterThanOrEqualTo(8);
   }
 
   @Test
