@@ -1,1 +1,146 @@
 @import 'tailwindcss';
+
+@theme {
+  /* Atkinson Hyperlegible was drawn for readers with low vision: a fitting voice for a clinic. */
+  --font-sans: 'Atkinson Hyperlegible Next Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace;
+
+  --color-ground: #eef3f6;
+  --color-paper: #ffffff;
+  --color-ink: #14293d;
+  --color-ink-soft: #4a6072;
+  --color-rule: #c9d5de;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fdecea;
+  --color-ok: #1f6f43;
+  --color-ok-soft: #e6f4ec;
+  --color-warn-soft: #fff4d6;
+
+  /* Wayfinding lines, one per specialty. All readable as white-on-colour and colour-on-white. */
+  --color-line-red: #c8323c;
+  --color-line-ochre: #a86200;
+  --color-line-blue: #1f6fd0;
+  --color-line-green: #2f7d4f;
+  --color-line-violet: #7a4fc0;
+  --color-line-slate: #4a6072;
+}
+
+@layer base {
+  html {
+    font-size: 106.25%; /* 17px: comfortable on a phone held at arm's length */
+  }
+
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* The booking path: a line in the colour of the chosen specialty, with one stop per step. */
+  .path {
+    --line: var(--color-line-slate);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .path-step {
+    position: relative;
+    padding: 0 0 1.75rem 3.25rem;
+  }
+
+  .path-step::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0.9375rem;
+    width: 0.375rem;
+    background: var(--line);
+    transition: background-color 300ms ease;
+  }
+
+  .path-step:last-child {
+    padding-bottom: 0;
+  }
+
+  .path-step:last-child::before {
+    bottom: auto;
+    height: 1rem;
+  }
+
+  .path-stop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+    border: 0.1875rem solid var(--line);
+    border-radius: 9999px;
+    background: var(--color-paper);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    transition:
+      background-color 300ms ease,
+      border-color 300ms ease;
+  }
+
+  .path-step[data-state='done'] .path-stop {
+    background: var(--line);
+    color: #fff;
+  }
+
+  .path-step[data-state='todo'] {
+    color: var(--color-ink-soft);
+  }
+
+  /* The appointment slip: a ticket with a perforated top edge and the specialty's colour. */
+  .slip {
+    --line: var(--color-line-slate);
+    position: relative;
+    border-left: 0.625rem solid var(--line);
+    background: var(--color-paper);
+    padding: 1.75rem 1.25rem 1.5rem;
+  }
+
+  .slip::before {
+    content: '';
+    position: absolute;
+    top: -0.375rem;
+    right: 0;
+    left: 0;
+    height: 0.75rem;
+    background: radial-gradient(
+        circle at 0.5rem 0.375rem,
+        var(--color-ground) 0.3125rem,
+        transparent 0.34rem
+      )
+      0 0 / 1rem 0.75rem repeat-x;
+  }
+}
