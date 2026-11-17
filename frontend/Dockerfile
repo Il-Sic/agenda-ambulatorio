@@ -7,9 +7,10 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.30-alpine
+# nginx's own image that runs entirely as an unprivileged user, on port 8080.
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --retries=6 \
-    CMD wget -q --spider http://127.0.0.1/ || exit 1
+    CMD wget -q --spider http://127.0.0.1:8080/ || exit 1

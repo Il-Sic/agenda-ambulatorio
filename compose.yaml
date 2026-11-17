@@ -55,7 +55,8 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "${APP_PORT:-8080}:80"
+      # Reachable from this computer only: the demo accounts are public knowledge.
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:8080"
     depends_on:
       backend:
         condition: service_healthy
