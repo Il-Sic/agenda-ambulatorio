@@ -102,13 +102,30 @@ public class TestData {
 
   public long appointment(
       long doctorId, String code, Instant startsAt, Instant endsAt, String status) {
+    // Booked long before any date the tests use.
+    return appointment(
+        doctorId, code, startsAt, endsAt, status, Instant.parse("2026-01-01T09:00:00Z"));
+  }
+
+  public long appointmentBookedAt(long doctorId, Instant startsAt, Instant bookedAt) {
+    String code = "T%07d".formatted(sequence.incrementAndGet());
+    return appointment(doctorId, code, startsAt, startsAt.plusSeconds(30 * 60), "BOOKED", bookedAt);
+  }
+
+  private long appointment(
+      long doctorId,
+      String code,
+      Instant startsAt,
+      Instant endsAt,
+      String status,
+      Instant bookedAt) {
     return jdbc.sql(
             """
             INSERT INTO appointment
                 (code, doctor_id, starts_at, ends_at, status,
                  patient_name, patient_email, patient_phone, created_at)
             VALUES (:code, :doctorId, :startsAt, :endsAt, :status,
-                    'Paziente Di Prova', :email, '3330000000', now())
+                    'Paziente Di Prova', :email, '3330000000', :bookedAt)
             RETURNING id
             """)
         .param("code", code)
@@ -117,6 +134,7 @@ public class TestData {
         .param("startsAt", startsAt.atOffset(ZoneOffset.UTC))
         .param("endsAt", endsAt.atOffset(ZoneOffset.UTC))
         .param("status", status)
+        .param("bookedAt", bookedAt.atOffset(ZoneOffset.UTC))
         .query(Long.class)
         .single();
   }

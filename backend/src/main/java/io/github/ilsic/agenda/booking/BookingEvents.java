@@ -27,6 +27,10 @@ class BookingEvents {
     record(BookingEvent.Type.BOOKING_CANCELLED, appointment, doctor);
   }
 
+  void reminder(Appointment appointment, DoctorSummary doctor) {
+    record(BookingEvent.Type.VISIT_REMINDER, appointment, doctor);
+  }
+
   private void record(BookingEvent.Type type, Appointment appointment, DoctorSummary doctor) {
     BookingEvent event =
         new BookingEvent(

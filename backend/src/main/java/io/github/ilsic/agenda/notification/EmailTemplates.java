@@ -19,6 +19,7 @@ final class EmailTemplates {
     return switch (message.type()) {
       case "BOOKING_CONFIRMED" -> Optional.of(confirmation(message));
       case "BOOKING_CANCELLED" -> Optional.of(cancellation(message));
+      case "VISIT_REMINDER" -> Optional.of(reminder(message));
       default -> Optional.empty();
     };
   }
@@ -67,5 +68,30 @@ final class EmailTemplates {
                 message.specialty(),
                 message.doctorName(),
                 WHEN.format(message.startsAt())));
+  }
+
+  private static Email reminder(BookingMessage message) {
+    return new Email(
+        message.patientEmail(),
+        "Promemoria della visita - codice " + message.bookingCode(),
+        """
+        Gentile %s,
+
+        le ricordiamo la sua visita.
+
+        Specialità: %s
+        Medico: %s
+        Quando: %s
+
+        Se non può venire, annulli la prenotazione sul nostro sito con il codice %s e questo indirizzo email: l'orario tornerà disponibile per un altro paziente.
+
+        Poliambulatorio Valdoria
+        """
+            .formatted(
+                message.patientName(),
+                message.specialty(),
+                message.doctorName(),
+                WHEN.format(message.startsAt()),
+                message.bookingCode()));
   }
 }
