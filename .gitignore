@@ -28,8 +28,5 @@ e2e/blob-report/
 .env.*
 !.env.example
 
-# Personal notes
-NOTE_STUDIO.md
-
 # Logs
 *.log
