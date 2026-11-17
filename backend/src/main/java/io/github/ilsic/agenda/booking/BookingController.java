@@ -2,6 +2,7 @@ package io.github.ilsic.agenda.booking;
 
 import io.github.ilsic.agenda.shared.Problem;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,9 +30,11 @@ class BookingController {
   private static final String PROBLEM = MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 
   private final BookingService bookings;
+  private final IdempotentBooking idempotentBooking;
 
-  BookingController(BookingService bookings) {
+  BookingController(BookingService bookings, IdempotentBooking idempotentBooking) {
     this.bookings = bookings;
+    this.idempotentBooking = idempotentBooking;
   }
 
   @GetMapping("/doctors/{doctorId}/slots")
@@ -63,10 +67,20 @@ class BookingController {
       content = @Content(mediaType = PROBLEM, schema = @Schema(implementation = Problem.class)))
   @ApiResponse(
       responseCode = "409",
-      description = "The slot is not offered or was just taken (type /problems/slot-not-available)",
+      description =
+          "The slot is not offered or was just taken (type /problems/slot-not-available), or the"
+              + " idempotency key was used for a different booking (type"
+              + " /problems/idempotency-key-reused)",
       content = @Content(mediaType = PROBLEM, schema = @Schema(implementation = Problem.class)))
-  BookingDetails book(@Valid @RequestBody BookingRequest request) {
-    return bookings.book(request);
+  BookingDetails book(
+      @Valid @RequestBody BookingRequest request,
+      @Parameter(
+              description =
+                  "Any unique value chosen by the client. Sending the same request again with"
+                      + " the same key returns the booking already made instead of a conflict.")
+          @RequestHeader(name = "Idempotency-Key", required = false)
+          String idempotencyKey) {
+    return idempotentBooking.book(request, idempotencyKey);
   }
 
   @PostMapping("/bookings/{code}/lookup")

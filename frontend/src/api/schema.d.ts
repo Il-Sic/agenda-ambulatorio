@@ -459,7 +459,10 @@ export interface operations {
     book: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Any unique value chosen by the client. Sending the same request again with the same key returns the booking already made instead of a conflict. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -487,7 +490,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description The slot is not offered or was just taken (type /problems/slot-not-available) */
+            /** @description The slot is not offered or was just taken (type /problems/slot-not-available), or the idempotency key was used for a different booking (type /problems/idempotency-key-reused) */
             409: {
                 headers: {
                     [name: string]: unknown;

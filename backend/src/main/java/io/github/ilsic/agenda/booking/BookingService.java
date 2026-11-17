@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,13 +64,27 @@ class BookingService {
     return freeSlots.find(doctorId, firstDay, lastDay, now);
   }
 
+  /** The booking made earlier with this key, if the request is the same one sent again. */
+  @Transactional(readOnly = true)
+  Optional<BookingDetails> madeWith(String idempotencyKey, BookingRequest request) {
+    return appointments
+        .findByIdempotencyKey(idempotencyKey)
+        .map(appointment -> {
+          if (!appointment.wasRequestedAs(
+              request.doctorId(), request.startsAt(), request.patient())) {
+            throw new IdempotencyKeyReusedException();
+          }
+          return BookingDetails.of(appointment, doctors.get(appointment.doctorId()));
+        });
+  }
+
   @Transactional
-  BookingDetails book(BookingRequest request) {
+  BookingDetails book(BookingRequest request, String idempotencyKey) {
     DoctorSummary doctor = doctors.get(request.doctorId());
     Instant now = clock.instant();
     Slot slot = offeredSlot(doctor.id(), request.startsAt(), now);
     Appointment appointment =
-        Appointment.book(codes.next(), doctor.id(), slot, request.patient(), now);
+        Appointment.book(codes.next(), doctor.id(), slot, request.patient(), now, idempotencyKey);
     try {
       // Flush now: the database has the last word on whether the slot is still free.
       appointments.saveAndFlush(appointment);

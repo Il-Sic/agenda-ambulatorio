@@ -16,6 +16,24 @@ class BookingExceptionHandler {
   }
 
   @ExceptionHandler
+  ProblemDetail idempotencyKeyReused(IdempotencyKeyReusedException exception) {
+    return Problems.of(
+        HttpStatus.CONFLICT,
+        "idempotency-key-reused",
+        "Idempotency key already used",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler
+  ProblemDetail invalidIdempotencyKey(InvalidIdempotencyKeyException exception) {
+    return Problems.of(
+        HttpStatus.BAD_REQUEST,
+        "invalid-idempotency-key",
+        "Invalid idempotency key",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler
   ProblemDetail bookingNotFound(BookingNotFoundException exception) {
     return Problems.of(
         HttpStatus.NOT_FOUND, "booking-not-found", "Booking not found", exception.getMessage());
