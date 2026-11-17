@@ -31,10 +31,18 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-rule">
-        <p className="mx-auto max-w-4xl px-4 py-4 text-sm text-ink-soft">
-          Sito dimostrativo: medici, pazienti e orari sono inventati. Non inserire dati personali
-          reali.
-        </p>
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 px-4 py-2 text-sm text-ink-soft">
+          <p className="py-2">
+            Sito dimostrativo: medici, pazienti e orari sono inventati. Non inserire dati personali
+            reali.
+          </p>
+          <Link
+            to="/segreteria"
+            className="inline-flex min-h-11 items-center underline underline-offset-4"
+          >
+            Area segreteria
+          </Link>
+        </div>
       </footer>
     </div>
   );
