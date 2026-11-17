@@ -26,6 +26,7 @@ export const routes: RouteObject[] = [
       { index: true, lazy: staff('AgendaPage') },
       { path: 'orari', lazy: staff('SchedulePage') },
       { path: 'chiusure', lazy: staff('ClosuresPage') },
+      { path: 'notifiche', lazy: staff('NotificationsPage') },
     ],
   },
   {
