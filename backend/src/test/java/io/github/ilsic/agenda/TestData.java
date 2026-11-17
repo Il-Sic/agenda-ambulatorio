@@ -27,7 +27,8 @@ public class TestData {
   public void reset() {
     jdbc.sql(
             """
-            TRUNCATE appointment, closure_day, weekly_availability, doctor, specialty, staff_user
+            TRUNCATE appointment, closure_day, weekly_availability, doctor, specialty, staff_user,
+                     outbox_event, sent_email
             RESTART IDENTITY CASCADE
             """)
         .update();
