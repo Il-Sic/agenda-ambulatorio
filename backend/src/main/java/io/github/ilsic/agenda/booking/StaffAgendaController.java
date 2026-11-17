@@ -16,10 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Staff agenda", description = "The day's visits and what happened to them")
 class StaffAgendaController {
 
-  private static final String CONFLICTS =
-      "Answers 409 with type /problems/appointment-state when the change makes no sense for the"
-          + " appointment, or /problems/concurrent-update when someone else changed it first.";
-
   private final AgendaService agenda;
 
   StaffAgendaController(AgendaService agenda) {
@@ -34,19 +30,22 @@ class StaffAgendaController {
   }
 
   @PostMapping("/appointments/{id}/arrival")
-  @Operation(summary = "Record that the patient has arrived", description = CONFLICTS)
+  @Operation(summary = "Record that the patient has arrived")
+  @ChangesAnAppointment
   AgendaEntry markArrived(@PathVariable long id) {
     return agenda.markArrived(id);
   }
 
   @PostMapping("/appointments/{id}/no-show")
-  @Operation(summary = "Record that the patient did not show up", description = CONFLICTS)
+  @Operation(summary = "Record that the patient did not show up")
+  @ChangesAnAppointment
   AgendaEntry markNoShow(@PathVariable long id) {
     return agenda.markNoShow(id);
   }
 
   @PostMapping("/appointments/{id}/cancellation")
-  @Operation(summary = "Cancel a visit that has not started yet", description = CONFLICTS)
+  @Operation(summary = "Cancel a visit that has not started yet")
+  @ChangesAnAppointment
   AgendaEntry cancel(@PathVariable long id) {
     return agenda.cancel(id);
   }
