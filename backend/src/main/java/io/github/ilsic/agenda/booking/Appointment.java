@@ -28,23 +28,44 @@ class Appointment {
   private AppointmentStatus status;
 
   private Instant createdAt;
+  private String idempotencyKey;
 
   /** Two people changing the same appointment at once: the second one fails instead of winning. */
   @Version private int version;
 
   protected Appointment() {}
 
-  private Appointment(String code, long doctorId, Slot slot, Patient patient, Instant createdAt) {
+  private Appointment(
+      String code,
+      long doctorId,
+      Slot slot,
+      Patient patient,
+      Instant createdAt,
+      String idempotencyKey) {
     this.code = code;
     this.doctorId = doctorId;
     this.slot = slot;
     this.patient = patient;
     this.status = AppointmentStatus.BOOKED;
     this.createdAt = createdAt;
+    this.idempotencyKey = idempotencyKey;
   }
 
   static Appointment book(String code, long doctorId, Slot slot, Patient patient, Instant now) {
-    return new Appointment(code, doctorId, slot, patient, now);
+    return book(code, doctorId, slot, patient, now, null);
+  }
+
+  /** The key, if any, identifies the client's request so that a retry is recognised. */
+  static Appointment book(
+      String code, long doctorId, Slot slot, Patient patient, Instant now, String idempotencyKey) {
+    return new Appointment(code, doctorId, slot, patient, now, idempotencyKey);
+  }
+
+  /** Whether a request with these contents is a repetition of the one that made this booking. */
+  boolean wasRequestedAs(long doctorId, Instant startsAt, Patient patient) {
+    return this.doctorId == doctorId
+        && slot.startsAt().equals(startsAt)
+        && this.patient.email().equals(patient.email());
   }
 
   void cancel(Instant now) {

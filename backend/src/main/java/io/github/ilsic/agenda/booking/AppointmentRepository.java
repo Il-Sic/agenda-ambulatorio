@@ -10,6 +10,8 @@ interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
   Optional<Appointment> findByCode(String code);
 
+  Optional<Appointment> findByIdempotencyKey(String idempotencyKey);
+
   @Query(
       """
       select a from Appointment a

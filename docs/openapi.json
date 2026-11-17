@@ -50,6 +50,15 @@
     "/api/v1/bookings" : {
       "post" : {
         "operationId" : "book",
+        "parameters" : [ {
+          "description" : "Any unique value chosen by the client. Sending the same request again with the same key returns the booking already made instead of a conflict.",
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -89,7 +98,7 @@
                 }
               }
             },
-            "description" : "The slot is not offered or was just taken (type /problems/slot-not-available)"
+            "description" : "The slot is not offered or was just taken (type /problems/slot-not-available), or the idempotency key was used for a different booking (type /problems/idempotency-key-reused)"
           }
         },
         "summary" : "Book a slot",
