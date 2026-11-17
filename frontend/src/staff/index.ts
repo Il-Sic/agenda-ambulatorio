@@ -3,5 +3,6 @@
 export { AgendaPage } from './AgendaPage';
 export { ClosuresPage } from './ClosuresPage';
 export { LoginPage } from './LoginPage';
+export { NotificationsPage } from './NotificationsPage';
 export { SchedulePage } from './SchedulePage';
 export { StaffArea } from './StaffArea';
