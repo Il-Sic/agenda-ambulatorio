@@ -2,15 +2,11 @@ package io.github.ilsic.agenda.outbox;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
-/** Runs the publisher in the background. Tests switch this off and call the publisher directly. */
-@Configuration(proxyBeanMethods = false)
-@EnableScheduling
-@ConditionalOnProperty(name = "agenda.outbox.scheduling.enabled", matchIfMissing = true)
+/** Runs the publisher in the background, about once a second. */
+@Component
 class OutboxSchedule {
 
   private static final Logger log = LoggerFactory.getLogger(OutboxSchedule.class);

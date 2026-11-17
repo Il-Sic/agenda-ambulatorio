@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(properties = "agenda.outbox.scheduling.enabled=false")
+@SpringBootTest(properties = "agenda.scheduling.enabled=false")
 @AutoConfigureMockMvc
 @Import({
   TestcontainersConfiguration.class,
