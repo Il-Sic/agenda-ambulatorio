@@ -20,11 +20,17 @@ class AgendaService {
 
   private final AppointmentRepository appointments;
   private final DoctorDirectory doctors;
+  private final BookingEvents events;
   private final Clock clock;
 
-  AgendaService(AppointmentRepository appointments, DoctorDirectory doctors, Clock clock) {
+  AgendaService(
+      AppointmentRepository appointments,
+      DoctorDirectory doctors,
+      BookingEvents events,
+      Clock clock) {
     this.appointments = appointments;
     this.doctors = doctors;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -51,17 +57,25 @@ class AgendaService {
     return change(appointmentId, Appointment::markNoShow);
   }
 
+  /** The patient is told about it: a cancellation, unlike an outcome, produces an event. */
   @Transactional
   AgendaEntry cancel(long appointmentId) {
-    return change(appointmentId, Appointment::cancel);
+    Appointment appointment = find(appointmentId);
+    DoctorSummary doctor = doctors.get(appointment.doctorId());
+    appointment.cancel(clock.instant());
+    events.cancelled(appointment, doctor);
+    return AgendaEntry.of(appointment, doctor);
   }
 
   private AgendaEntry change(long appointmentId, BiConsumer<Appointment, Instant> change) {
-    Appointment appointment =
-        appointments
-            .findById(appointmentId)
-            .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
+    Appointment appointment = find(appointmentId);
     change.accept(appointment, clock.instant());
     return AgendaEntry.of(appointment, doctors.get(appointment.doctorId()));
+  }
+
+  private Appointment find(long appointmentId) {
+    return appointments
+        .findById(appointmentId)
+        .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
   }
 }
