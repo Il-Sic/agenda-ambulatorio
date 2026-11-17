@@ -8,6 +8,10 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8080',
     locale: 'it-IT',
+    // Native date and time fields follow the language of the browser itself, not of the page,
+    // and only the full Chromium build ships languages other than English.
+    channel: 'chromium',
+    launchOptions: { args: ['--lang=it-IT'] },
   },
   projects: [
     {
