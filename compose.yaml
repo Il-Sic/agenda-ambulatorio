@@ -21,6 +21,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-agenda}
       DB_USERNAME: ${POSTGRES_USER:-agenda}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-agenda-local-only}
+      # Loads invented doctors, patients and the two demo accounts listed in the README.
+      LIQUIBASE_CONTEXTS: demo
     depends_on:
       postgres:
         condition: service_healthy
