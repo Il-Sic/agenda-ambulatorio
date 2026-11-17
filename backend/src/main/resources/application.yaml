@@ -11,6 +11,9 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+    # Liquibase runs every changeset when no context is given, demo data included.
+    # Naming one keeps the demo data out unless LIQUIBASE_CONTEXTS=demo asks for it.
+    contexts: ${LIQUIBASE_CONTEXTS:production}
   mvc:
     format:
       date: iso
