@@ -27,14 +27,30 @@ CONSTRAINT appointment_no_overlap EXCLUDE USING gist (
 The application still checks that a slot is free before inserting, to give a friendly answer in
 the normal case. The constraint is what guarantees the rule.
 
+## What happens when requests race
+
+Measured with `ConcurrentBookingTest`: twelve requests for the same slot released at the same
+instant, repeated thirty times. Exactly one booking was created every time.
+
+- Usually the losing insert waits for the winning transaction and then fails with SQLSTATE
+  `23P01` (exclusion violation).
+- Sometimes two rows are written before either is checked. Each transaction then waits for the
+  other, and PostgreSQL breaks the deadlock by aborting one of them with `40P01`. In that
+  artificial race this happened to roughly one losing request in five, each after waiting
+  `deadlock_timeout` (one second by default).
+- `BookingService` translates both codes into "slot not available" (HTTP 409).
+- With the constraint removed, the same test lets ten of the twelve requests through: the check
+  in application code is not enough on its own.
+
 ## Consequences
 
 - The rule holds for every writer: the API, a script, a manual `INSERT`.
 - It compares periods, not start times: it stays correct if visit lengths change or differ
   between doctors.
 - The schema depends on PostgreSQL. Accepted: the project already relies on it.
-- The application must translate the constraint violation into a clear "slot no longer
+- The application must translate two database errors, not one, into a clear "slot no longer
   available" answer.
+- A request that loses through a deadlock answers about a second later than the others.
 
 ## Alternatives considered
 
