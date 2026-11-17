@@ -56,6 +56,7 @@ If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The 
 |---|---|
 | No double booking, guaranteed by the database with an exclusion constraint | [`002-booking.sql`](backend/src/main/resources/db/changelog/changes/002-booking.sql) |
 | The proof: twelve requests at the same instant, one booking | [`ConcurrentBookingTest`](backend/src/test/java/io/github/ilsic/agenda/booking/ConcurrentBookingTest.java) |
+| Booking is safe to retry: the same request sent again with the same idempotency key creates no duplicate | [`IdempotentBooking`](backend/src/main/java/io/github/ilsic/agenda/booking/IdempotentBooking.java), [`BookingIdempotencyTest`](backend/src/test/java/io/github/ilsic/agenda/booking/BookingIdempotencyTest.java) |
 | Free slots computed by a single SQL query, daylight saving time included | [`FreeSlotFinder`](backend/src/main/java/io/github/ilsic/agenda/booking/FreeSlotFinder.java), [`FreeSlotFinderTest`](backend/src/test/java/io/github/ilsic/agenda/booking/FreeSlotFinderTest.java) |
 | Transactional outbox: the event is born in the same transaction as the booking | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
 | Publishing to Kafka with `FOR UPDATE SKIP LOCKED` | [`OutboxPublisher`](backend/src/main/java/io/github/ilsic/agenda/outbox/OutboxPublisher.java), [`OutboxPublisherTest`](backend/src/test/java/io/github/ilsic/agenda/outbox/OutboxPublisherTest.java) |
@@ -176,7 +177,7 @@ cd ../frontend && npm run api:generate                                   # updat
 - **Outbox without clean-up.** Published rows stay in the table. A periodic job should archive them.
 - **An event that cannot be processed is dropped after ten attempts in quick succession.** That is right for an unreadable message; if the database stays down longer, that e-mail is lost. I would add retries spaced out over time and a topic for messages that cannot be processed.
 - **Single-node Kafka and plain HTTP.** Fine for a demo, not for production.
-- **Next features:** idempotency key on booking, a reminder 24 hours before the visit, a Helm chart.
+- **Next features:** a reminder 24 hours before the visit, a Helm chart.
 
 ## License
 
