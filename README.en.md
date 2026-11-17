@@ -61,6 +61,7 @@ If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The 
 | Transactional outbox: the event is born in the same transaction as the booking | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
 | Publishing to Kafka with `FOR UPDATE SKIP LOCKED` | [`OutboxPublisher`](backend/src/main/java/io/github/ilsic/agenda/outbox/OutboxPublisher.java), [`OutboxPublisherTest`](backend/src/test/java/io/github/ilsic/agenda/outbox/OutboxPublisherTest.java) |
 | Idempotent consumer: an event delivered twice produces one e-mail | [`SimulatedEmailSender`](backend/src/main/java/io/github/ilsic/agenda/notification/SimulatedEmailSender.java) |
+| A reminder the day before the visit, through the same event path as the other e-mails | [`VisitReminders`](backend/src/main/java/io/github/ilsic/agenda/booking/VisitReminders.java), [`VisitRemindersTest`](backend/src/test/java/io/github/ilsic/agenda/booking/VisitRemindersTest.java) |
 | One modular service, with boundaries verified on every build | [`ModularityTest`](backend/src/test/java/io/github/ilsic/agenda/ModularityTest.java) |
 | Session in an HttpOnly cookie, CSRF, two roles, everything else denied | [`SecurityConfiguration`](backend/src/main/java/io/github/ilsic/agenda/identity/SecurityConfiguration.java), [`AccessRulesTest`](backend/src/test/java/io/github/ilsic/agenda/identity/AccessRulesTest.java) |
 | Errors as Problem Details, told apart by a stable `type` | [`BookingExceptionHandler`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingExceptionHandler.java) |
@@ -177,7 +178,7 @@ cd ../frontend && npm run api:generate                                   # updat
 - **Outbox without clean-up.** Published rows stay in the table. A periodic job should archive them.
 - **An event that cannot be processed is dropped after ten attempts in quick succession.** That is right for an unreadable message; if the database stays down longer, that e-mail is lost. I would add retries spaced out over time and a topic for messages that cannot be processed.
 - **Single-node Kafka and plain HTTP.** Fine for a demo, not for production.
-- **Next features:** a reminder 24 hours before the visit, a Helm chart.
+- **Docker Compose only.** To run it on Kubernetes I would add a Helm chart.
 
 ## License
 

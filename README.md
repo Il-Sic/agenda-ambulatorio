@@ -61,6 +61,7 @@ Se la porta 8080 è occupata, copia `.env.example` in `.env` e cambia `APP_PORT`
 | Outbox transazionale: l'evento nasce nella stessa transazione della prenotazione | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
 | Pubblicazione su Kafka con `FOR UPDATE SKIP LOCKED` | [`OutboxPublisher`](backend/src/main/java/io/github/ilsic/agenda/outbox/OutboxPublisher.java), [`OutboxPublisherTest`](backend/src/test/java/io/github/ilsic/agenda/outbox/OutboxPublisherTest.java) |
 | Consumer idempotente: un evento consegnato due volte produce una sola email | [`SimulatedEmailSender`](backend/src/main/java/io/github/ilsic/agenda/notification/SimulatedEmailSender.java) |
+| Promemoria il giorno prima della visita, con lo stesso percorso a eventi delle altre email | [`VisitReminders`](backend/src/main/java/io/github/ilsic/agenda/booking/VisitReminders.java), [`VisitRemindersTest`](backend/src/test/java/io/github/ilsic/agenda/booking/VisitRemindersTest.java) |
 | Un solo servizio a moduli, con i confini verificati a ogni build | [`ModularityTest`](backend/src/test/java/io/github/ilsic/agenda/ModularityTest.java) |
 | Sessione su cookie HttpOnly, CSRF, due ruoli, tutto il resto negato | [`SecurityConfiguration`](backend/src/main/java/io/github/ilsic/agenda/identity/SecurityConfiguration.java), [`AccessRulesTest`](backend/src/test/java/io/github/ilsic/agenda/identity/AccessRulesTest.java) |
 | Errori in formato Problem Details, distinti da un `type` stabile | [`BookingExceptionHandler`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingExceptionHandler.java) |
@@ -177,7 +178,7 @@ cd ../frontend && npm run api:generate                                   # aggio
 - **Outbox senza pulizia.** Le righe pubblicate restano in tabella. Servirebbe un lavoro periodico che le archivia.
 - **Un evento che non si riesce a elaborare viene scartato dopo dieci tentativi ravvicinati.** Va bene per un messaggio illeggibile; se invece il database resta fermo più a lungo, quell'email si perde. Aggiungerei tentativi distanziati nel tempo e un topic per i messaggi non elaborabili.
 - **Kafka a un solo nodo e HTTP in chiaro.** Va bene per una demo, non per la produzione.
-- **Prossime funzioni:** promemoria 24 ore prima della visita, chart Helm.
+- **Solo Docker Compose.** Per portarlo su Kubernetes aggiungerei un chart Helm.
 
 ## Licenza
 
