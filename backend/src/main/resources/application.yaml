@@ -15,6 +15,15 @@ spring:
     format:
       date: iso
 
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        # The demo runs on plain http://localhost. Behind HTTPS set SESSION_COOKIE_SECURE=true.
+        secure: ${SESSION_COOKIE_SECURE:false}
+
 springdoc:
   # Errors are documented where they can actually happen, not on every operation.
   override-with-generic-response: false

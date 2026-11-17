@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /** Inserts fixtures with plain SQL, so tests do not depend on the code they verify. */
 public class TestData {
@@ -16,16 +17,32 @@ public class TestData {
   private final JdbcClient jdbc;
   private final AtomicInteger sequence = new AtomicInteger();
 
-  public TestData(JdbcClient jdbc) {
+  private final PasswordEncoder passwordEncoder;
+
+  public TestData(JdbcClient jdbc, PasswordEncoder passwordEncoder) {
     this.jdbc = jdbc;
+    this.passwordEncoder = passwordEncoder;
   }
 
   public void reset() {
     jdbc.sql(
             """
-            TRUNCATE appointment, closure_day, weekly_availability, doctor, specialty
+            TRUNCATE appointment, closure_day, weekly_availability, doctor, specialty, staff_user
             RESTART IDENTITY CASCADE
             """)
+        .update();
+  }
+
+  public void staffUser(String username, String displayName, String role, String password) {
+    jdbc.sql(
+            """
+            INSERT INTO staff_user (username, display_name, role, password_hash)
+            VALUES (:username, :displayName, :role, :passwordHash)
+            """)
+        .param("username", username)
+        .param("displayName", displayName)
+        .param("role", role)
+        .param("passwordHash", passwordEncoder.encode(password))
         .update();
   }
 

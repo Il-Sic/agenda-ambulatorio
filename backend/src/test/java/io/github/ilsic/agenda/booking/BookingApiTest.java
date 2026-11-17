@@ -1,5 +1,6 @@
 package io.github.ilsic.agenda.booking;
 
+import static io.github.ilsic.agenda.TestCsrf.csrf;
 import static java.time.DayOfWeek.MONDAY;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -173,6 +174,7 @@ class BookingApiTest {
     MvcTestResult result =
         mvc.post()
             .uri("/api/v1/bookings")
+            .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content(
                 """
@@ -275,6 +277,7 @@ class BookingApiTest {
   private MvcTestResult book(long doctorId, String startsAt, String email) {
     return mvc.post()
         .uri("/api/v1/bookings")
+        .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(
             """
@@ -296,6 +299,7 @@ class BookingApiTest {
   private MvcTestResult postEmail(String uri, String code, String email) {
     return mvc.post()
         .uri(uri, code)
+        .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(
             """
