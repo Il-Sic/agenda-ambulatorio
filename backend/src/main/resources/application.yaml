@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: agenda-ambulatorio
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agenda}
+    username: ${DB_USERNAME:agenda}
+    password: ${DB_PASSWORD:agenda-local-only}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
