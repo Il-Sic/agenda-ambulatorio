@@ -94,6 +94,15 @@ class AvailabilityApiTest {
   }
 
   @Test
+  void refusesAWindowTooShortForEvenOneVisit() {
+    assertThat(add(ADMIN, "MONDAY", "09:00", "09:10", 30))
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .extractingPath("$.type")
+        .isEqualTo("/problems/invalid-availability");
+  }
+
+  @Test
   void refusesAVisitLengthThatMakesNoSense() {
     assertThat(add(ADMIN, "MONDAY", "09:00", "13:00", 0))
         .hasStatus(HttpStatus.BAD_REQUEST)

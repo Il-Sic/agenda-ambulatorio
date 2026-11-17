@@ -3,6 +3,7 @@ package io.github.ilsic.agenda.scheduling;
 import io.github.ilsic.agenda.shared.ClinicTime;
 import io.github.ilsic.agenda.shared.DatabaseErrors;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.dao.DataAccessException;
@@ -42,6 +43,10 @@ class ScheduleService {
     requireDoctor(doctorId);
     if (!request.startTime().isBefore(request.endTime())) {
       throw new InvalidAvailabilityException("The window must end after it starts");
+    }
+    if (Duration.between(request.startTime(), request.endTime()).toMinutes()
+        < request.slotMinutes()) {
+      throw new InvalidAvailabilityException("The window is too short for even one visit");
     }
     WeeklyAvailability availability =
         new WeeklyAvailability(
