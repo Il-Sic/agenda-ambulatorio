@@ -8,6 +8,7 @@ import { Notice } from '../components/Notice';
 import { Slip } from '../components/Slip';
 import { addDays, formatDateTime, todayAtTheClinic } from '../lib/dates';
 import { dayOrUndefined, instantOrUndefined, numberOrUndefined } from '../lib/params';
+import { randomKey } from '../lib/randomKey';
 import { lineColor } from '../lib/specialty';
 import { ChoiceList } from './ChoiceList';
 import { DetailsStep } from './DetailsStep';
@@ -81,14 +82,25 @@ export function BookingPage() {
     setParams(next);
   }
 
+  // One key per attempt at a slot. If the answer gets lost and the patient tries again, the
+  // server recognises the repetition and returns the booking it already made.
+  const attempt = useRef<{ slot: string; key: string }>(undefined);
+
   async function book(patient: PatientDetails) {
     if (doctorId === undefined || !startsAt) {
       return;
     }
+    const slot = `${String(doctorId)}|${startsAt}`;
+    if (attempt.current?.slot !== slot) {
+      attempt.current = { slot, key: randomKey() };
+    }
     setDetails(patient);
     try {
       const booking = await unwrap(
-        api.POST('/api/v1/bookings', { body: { doctorId, startsAt, ...patient } }),
+        api.POST('/api/v1/bookings', {
+          params: { header: { 'Idempotency-Key': attempt.current.key } },
+          body: { doctorId, startsAt, ...patient },
+        }),
       );
       setConfirmed(booking);
       setParams({}, { replace: true });

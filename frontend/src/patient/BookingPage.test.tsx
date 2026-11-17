@@ -182,3 +182,40 @@ test('does not offer days beyond the ninety the clinic takes bookings for', asyn
   expect(screen.getByRole('button', { name: 'Giorni precedenti' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Giorni successivi' })).not.toBeInTheDocument();
 });
+
+test('a retry after a lost connection repeats the same idempotency key', async () => {
+  const keys: (string | null)[] = [];
+  server.use(
+    http.post('*/api/v1/bookings', ({ request }) => {
+      keys.push(request.headers.get('Idempotency-Key'));
+      if (keys.length === 1) {
+        // The request may or may not have reached the server: the patient cannot know.
+        return HttpResponse.error();
+      }
+      return HttpResponse.json(
+        {
+          code: 'ABCD2345',
+          status: 'BOOKED',
+          startsAt: NINE,
+          endsAt: HALF_PAST_NINE,
+          doctorName: 'Dott.ssa Elena Marchetti',
+          specialty: 'Cardiologia',
+          patientName: 'Giulia Bianchi',
+        },
+        { status: 201 },
+      );
+    }),
+  );
+  const { user } = renderApp('/');
+  await chooseTheNineOClockSlot(user);
+  await fillInTheDetails(user);
+
+  await user.click(screen.getByRole('button', { name: 'Conferma prenotazione' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Connessione non riuscita.');
+  await user.click(screen.getByRole('button', { name: 'Conferma prenotazione' }));
+
+  expect(await screen.findByRole('heading', { name: 'Prenotazione confermata' })).toBeVisible();
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toMatch(/^[0-9a-f]{32}$/);
+  expect(keys[1]).toBe(keys[0]);
+});
