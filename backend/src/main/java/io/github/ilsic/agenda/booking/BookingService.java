@@ -19,6 +19,9 @@ class BookingService {
 
   static final int MAX_DAYS_PER_SEARCH = 31;
 
+  /** How far ahead a visit can be booked. */
+  static final int BOOKING_HORIZON_DAYS = 90;
+
   private final AppointmentRepository appointments;
   private final FreeSlotFinder freeSlots;
   private final DoctorDirectory doctors;
@@ -51,7 +54,13 @@ class BookingService {
           "At most " + MAX_DAYS_PER_SEARCH + " days can be searched at once");
     }
     doctors.get(doctorId);
-    return freeSlots.find(doctorId, from, to, clock.instant());
+    Instant now = clock.instant();
+    LocalDate firstDay = max(from, firstBookableDay(now));
+    LocalDate lastDay = min(to, lastBookableDay(now));
+    if (lastDay.isBefore(firstDay)) {
+      return List.of();
+    }
+    return freeSlots.find(doctorId, firstDay, lastDay, now);
   }
 
   @Transactional
@@ -93,10 +102,29 @@ class BookingService {
   /** A friendly early check. The exclusion constraint is what actually guarantees the rule. */
   private Slot offeredSlot(long doctorId, Instant startsAt, Instant now) {
     LocalDate day = LocalDate.ofInstant(startsAt, ClinicTime.ZONE);
+    if (day.isBefore(firstBookableDay(now)) || day.isAfter(lastBookableDay(now))) {
+      throw new SlotNotAvailableException();
+    }
     return freeSlots.find(doctorId, day, day, now).stream()
         .filter(slot -> slot.startsAt().equals(startsAt))
         .findFirst()
         .orElseThrow(SlotNotAvailableException::new);
+  }
+
+  private static LocalDate firstBookableDay(Instant now) {
+    return LocalDate.ofInstant(now, ClinicTime.ZONE);
+  }
+
+  private static LocalDate lastBookableDay(Instant now) {
+    return firstBookableDay(now).plusDays(BOOKING_HORIZON_DAYS);
+  }
+
+  private static LocalDate max(LocalDate a, LocalDate b) {
+    return a.isAfter(b) ? a : b;
+  }
+
+  private static LocalDate min(LocalDate a, LocalDate b) {
+    return a.isBefore(b) ? a : b;
   }
 
   private Appointment ownedBy(String code, String email) {

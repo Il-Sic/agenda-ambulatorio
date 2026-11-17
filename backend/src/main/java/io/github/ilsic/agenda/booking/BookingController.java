@@ -36,7 +36,9 @@ class BookingController {
   @GetMapping("/doctors/{doctorId}/slots")
   @Operation(
       summary = "List the free slots of a doctor",
-      description = "Both days are included and are meant in the clinic's time zone.")
+      description =
+          "Both days are included and are meant in the clinic's time zone."
+              + " Visits can be booked from today up to 90 days ahead.")
   @ApiResponse(responseCode = "200", description = "Free slots, earliest first")
   @ApiResponse(
       responseCode = "400",

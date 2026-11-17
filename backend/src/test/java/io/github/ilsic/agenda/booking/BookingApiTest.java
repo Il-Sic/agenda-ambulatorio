@@ -77,6 +77,47 @@ class BookingApiTest {
   }
 
   @Test
+  void aMalformedRequestIsAProblemWithATypeLikeEveryOtherError() {
+    assertThat(mvc.get().uri("/api/v1/doctors/{id}/slots?from=not-a-date&to=2027-03-01", doctor))
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .extractingPath("$.type")
+        .isEqualTo("/problems/bad-request");
+  }
+
+  @Test
+  void offersSlotsUpToNinetyDaysAheadAndNoFurther() {
+    // Tests run on 15 February 2027: the last bookable day is 16 May.
+    LocalDate lastBookableMonday = LocalDate.of(2027, 5, 10);
+    LocalDate firstMondayTooFar = LocalDate.of(2027, 5, 17);
+
+    assertThat(slots(lastBookableMonday, lastBookableMonday))
+        .bodyJson()
+        .extractingPath("$[*].startsAt")
+        .asArray()
+        .hasSize(2);
+    assertThat(slots(firstMondayTooFar, firstMondayTooFar))
+        .hasStatusOk()
+        .bodyJson()
+        .isLenientlyEqualTo("[]");
+    assertThat(slots(LocalDate.of(9999, 12, 30), LocalDate.of(9999, 12, 31)))
+        .hasStatusOk()
+        .bodyJson()
+        .isLenientlyEqualTo("[]");
+  }
+
+  @Test
+  void refusesToBookBeyondTheBookingHorizon() {
+    String aMondayTooFarAtNine = "2027-05-17T07:00:00Z";
+
+    assertThat(book(doctor, aMondayTooFarAtNine, "giulia.bianchi@example.com"))
+        .hasStatus(HttpStatus.CONFLICT)
+        .bodyJson()
+        .extractingPath("$.type")
+        .isEqualTo("/problems/slot-not-available");
+  }
+
+  @Test
   void booksAFreeSlotAndReturnsABookingCode() {
     MvcTestResult result = book(doctor, NINE, "giulia.bianchi@example.com");
 
