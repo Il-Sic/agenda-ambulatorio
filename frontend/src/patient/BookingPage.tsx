@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { Notice } from '../components/Notice';
 import { Slip } from '../components/Slip';
 import { addDays, formatDateTime, todayAtTheClinic } from '../lib/dates';
+import { numberOrUndefined } from '../lib/params';
 import { lineColor } from '../lib/specialty';
 import { ChoiceList } from './ChoiceList';
 import { DetailsStep } from './DetailsStep';
@@ -291,9 +292,4 @@ function Confirmation({ booking, email, onBookAnother }: ConfirmationProps) {
       </div>
     </div>
   );
-}
-
-function numberOrUndefined(value: string | null): number | undefined {
-  const number = Number(value);
-  return value !== null && Number.isInteger(number) && number > 0 ? number : undefined;
 }

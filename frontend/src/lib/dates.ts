@@ -51,6 +51,11 @@ export function formatDateTime(instant: string): string {
   return `${formatDayLong(instant)}, ore ${formatTime(instant)}`;
 }
 
+/** "lunedì 1 marzo 2027", from a YYYY-MM-DD day. */
+export function formatDayKeyLong(day: string): string {
+  return longDayFormat.format(atNoonUtc(day));
+}
+
 /** "lun 1 mar", from a YYYY-MM-DD day. */
 export function formatDayShort(day: string): string {
   return shortDayFormat.format(atNoonUtc(day));

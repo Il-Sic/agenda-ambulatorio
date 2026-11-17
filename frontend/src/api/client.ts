@@ -19,7 +19,7 @@ function readCookie(name: string): string | undefined {
 export async function csrfHeaders(): Promise<Record<string, string>> {
   if (!readCookie('XSRF-TOKEN')) {
     // Any response carries the cookie; this one is cheap and has no side effects.
-    await fetch('/api/v1/auth/me');
+    await fetch(new URL('/api/v1/auth/me', window.location.origin));
   }
   const token = readCookie('XSRF-TOKEN');
   return token ? { 'X-XSRF-TOKEN': token } : {};
