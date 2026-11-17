@@ -122,3 +122,25 @@ test('the availability of another doctor can be opened', async () => {
 
   expect(await screen.findByText('08:00 – 12:00')).toBeVisible();
 });
+
+test('a window that ends before it starts is refused before contacting the server', async () => {
+  signedInAs('ADMIN');
+  const { user } = renderApp('/segreteria/orari');
+
+  await user.type(await screen.findByLabelText('Dalle'), '13:00');
+  await user.type(screen.getByLabelText('Alle'), '09:00');
+  await user.click(screen.getByRole('button', { name: 'Aggiungi fascia' }));
+
+  expect(await screen.findByText('L’ora di fine deve venire dopo l’ora di inizio.')).toBeVisible();
+});
+
+test('a window too short for a single visit is refused before contacting the server', async () => {
+  signedInAs('ADMIN');
+  const { user } = renderApp('/segreteria/orari');
+
+  await user.type(await screen.findByLabelText('Dalle'), '09:00');
+  await user.type(screen.getByLabelText('Alle'), '09:10');
+  await user.click(screen.getByRole('button', { name: 'Aggiungi fascia' }));
+
+  expect(await screen.findByText('La fascia è più corta di una visita.')).toBeVisible();
+});

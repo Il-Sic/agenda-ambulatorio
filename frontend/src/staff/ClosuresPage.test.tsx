@@ -74,3 +74,14 @@ test('an admin reopens a day', async () => {
 
   expect(await screen.findByText('Nessun giorno di chiusura in programma.')).toBeVisible();
 });
+
+test('a closure needs a day and a reason', async () => {
+  signedInAs('ADMIN');
+  server.use(http.get('*/api/v1/staff/closures', () => HttpResponse.json([])));
+  const { user } = renderApp('/segreteria/chiusure');
+
+  await user.click(await screen.findByRole('button', { name: 'Aggiungi chiusura' }));
+
+  expect(await screen.findByText('Scegli il giorno.')).toBeVisible();
+  expect(screen.getByText('Scrivi il motivo della chiusura.')).toBeVisible();
+});

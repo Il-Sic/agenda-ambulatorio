@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { api, unwrap, type Schemas } from '../api/client';
+import { api, unwrap } from '../api/client';
 import { messageFor } from '../api/problem';
 import { Button } from '../components/Button';
 import { Field } from '../components/Field';
 import { Notice } from '../components/Notice';
 import { formatDayKeyLong } from '../lib/dates';
 import { useStaffUser } from './useCurrentUser';
-
-type NewClosure = Schemas['ClosureRequest'];
+import { closure as closureRules, type ClosureForm } from './validation';
 
 const CLOSURES = ['closures'];
 
@@ -87,7 +87,10 @@ function AddClosureForm({ onAdded }: { onAdded: () => Promise<void> }) {
     setError,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<NewClosure>({ defaultValues: { day: '', reason: '' } });
+  } = useForm<ClosureForm>({
+    resolver: zodResolver(closureRules),
+    defaultValues: { day: '', reason: '' },
+  });
 
   const submit = handleSubmit(async (closure) => {
     try {
@@ -108,19 +111,12 @@ function AddClosureForm({ onAdded }: { onAdded: () => Promise<void> }) {
       <h2 className="text-xl font-bold">Aggiungi un giorno di chiusura</h2>
       {errors.root?.message && <Notice kind="error">{errors.root.message}</Notice>}
       <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
-        <Field
-          label="Giorno"
-          type="date"
-          error={errors.day?.message}
-          {...register('day', { required: 'Scegli il giorno.' })}
-        />
+        <Field label="Giorno" type="date" error={errors.day?.message} {...register('day')} />
         <Field
           label="Motivo"
           hint="Per esempio: festa del patrono."
           error={errors.reason?.message}
-          {...register('reason', {
-            validate: (reason) => reason.trim() !== '' || 'Scrivi il motivo della chiusura.',
-          })}
+          {...register('reason')}
         />
       </div>
       <Button type="submit" disabled={isSubmitting}>
