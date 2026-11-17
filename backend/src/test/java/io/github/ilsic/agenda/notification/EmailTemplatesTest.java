@@ -44,6 +44,18 @@ class EmailTemplatesTest {
   }
 
   @Test
+  void aReminderSaysWhenTheVisitIsAndHowToCancelIt() {
+    Email email =
+        EmailTemplates.render(message("VISIT_REMINDER", "2027-03-01T08:00:00Z")).orElseThrow();
+
+    assertThat(email.subject()).isEqualTo("Promemoria della visita - codice ABCD2345");
+    assertThat(email.body())
+        .contains("lunedì 1 marzo 2027 alle 09:00")
+        .contains("Dott.ssa Elena Marchetti")
+        .contains("annull");
+  }
+
+  @Test
   void anEventOfAnUnknownTypeProducesNoEmail() {
     assertThat(EmailTemplates.render(message("SOMETHING_NEW", "2027-03-01T08:00:00Z"))).isEmpty();
   }

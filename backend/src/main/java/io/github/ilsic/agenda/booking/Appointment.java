@@ -29,6 +29,7 @@ class Appointment {
 
   private Instant createdAt;
   private String idempotencyKey;
+  private Instant reminderSentAt;
 
   /** Two people changing the same appointment at once: the second one fails instead of winning. */
   @Version private int version;
@@ -77,6 +78,10 @@ class Appointment {
           "An appointment that has already started cannot be cancelled");
     }
     status = AppointmentStatus.CANCELLED;
+  }
+
+  void markReminded(Instant now) {
+    reminderSentAt = now;
   }
 
   void markArrived(Instant now) {

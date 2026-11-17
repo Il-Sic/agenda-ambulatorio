@@ -21,6 +21,7 @@ record BookingEvent(
 
   enum Type {
     BOOKING_CONFIRMED,
-    BOOKING_CANCELLED
+    BOOKING_CANCELLED,
+    VISIT_REMINDER
   }
 }
