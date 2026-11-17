@@ -23,6 +23,7 @@ class BookingService {
   private final FreeSlotFinder freeSlots;
   private final DoctorDirectory doctors;
   private final BookingCodeGenerator codes;
+  private final BookingEvents events;
   private final Clock clock;
 
   BookingService(
@@ -30,11 +31,13 @@ class BookingService {
       FreeSlotFinder freeSlots,
       DoctorDirectory doctors,
       BookingCodeGenerator codes,
+      BookingEvents events,
       Clock clock) {
     this.appointments = appointments;
     this.freeSlots = freeSlots;
     this.doctors = doctors;
     this.codes = codes;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -67,6 +70,8 @@ class BookingService {
       }
       throw exception;
     }
+    // Same transaction as the insert: the event exists if and only if the booking does.
+    events.confirmed(appointment, doctor);
     return BookingDetails.of(appointment, doctor);
   }
 
@@ -79,8 +84,10 @@ class BookingService {
   @Transactional
   BookingDetails cancel(String code, String email) {
     Appointment appointment = ownedBy(code, email);
+    DoctorSummary doctor = doctors.get(appointment.doctorId());
     appointment.cancel(clock.instant());
-    return BookingDetails.of(appointment, doctors.get(appointment.doctorId()));
+    events.cancelled(appointment, doctor);
+    return BookingDetails.of(appointment, doctor);
   }
 
   /** A friendly early check. The exclusion constraint is what actually guarantees the rule. */
