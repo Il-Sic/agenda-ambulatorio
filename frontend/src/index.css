@@ -50,6 +50,11 @@
     outline-offset: 3px;
   }
 
+  /* On a dark surface an ink-coloured ring would disappear. */
+  .on-ink :focus-visible {
+    outline-color: #fff;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     * {
       animation: none !important;

@@ -102,3 +102,25 @@ test('when the session expires the next request leads back to the sign-in page',
 
   expect(await screen.findByRole('heading', { name: 'Accesso segreteria' })).toBeVisible();
 });
+
+test('says so when signing out does not work, and stays signed in', async () => {
+  signedInAs('STAFF');
+  server.use(http.post('*/api/v1/auth/logout', () => HttpResponse.error()));
+  agendaIsEmpty();
+  const { user } = renderApp('/segreteria');
+
+  await user.click(await screen.findByRole('button', { name: 'Esci' }));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Connessione non riuscita.');
+  expect(screen.getByRole('heading', { name: 'Agenda' })).toBeVisible();
+});
+
+test('asks for both credentials before contacting the server', async () => {
+  server.use(http.get('*/api/v1/auth/me', () => problem(401, '/problems/unauthenticated')));
+  const { user } = renderApp('/segreteria/accesso');
+
+  await user.click(await screen.findByRole('button', { name: 'Accedi' }));
+
+  expect(await screen.findByText('Scrivi il nome utente.')).toBeVisible();
+  expect(screen.getByText('Scrivi la password.')).toBeVisible();
+});

@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router';
+import { SkipLink } from '../components/SkipLink';
 
 const NAV_LINK =
   'inline-flex min-h-11 items-center underline-offset-8 aria-[current=page]:font-bold aria-[current=page]:underline';
@@ -6,12 +7,7 @@ const NAV_LINK =
 export function Layout() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <a
-        href="#contenuto"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:bg-ink focus:p-3 focus:text-white"
-      >
-        Vai al contenuto
-      </a>
+      <SkipLink />
       <header className="border-b-2 border-ink bg-paper">
         <div className="mx-auto flex max-w-4xl flex-wrap items-baseline justify-between gap-x-6 px-4 py-3">
           <Link to="/" className="text-lg font-bold">
