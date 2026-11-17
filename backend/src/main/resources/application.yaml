@@ -13,6 +13,18 @@ spring:
       hibernate.jdbc.time_zone: UTC
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  mvc:
+    format:
+      date: iso
+
+springdoc:
+  # Errors are documented where they can actually happen, not on every operation.
+  override-with-generic-response: false
+  # Stable output, so the committed copy of the spec only changes when the API does.
+  writer-with-order-by-keys: true
+  writer-with-default-pretty-printer: true
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
 
 management:
   endpoints:
