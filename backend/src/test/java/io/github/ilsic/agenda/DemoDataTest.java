@@ -2,9 +2,12 @@ package io.github.ilsic.agenda;
 
 import static io.github.ilsic.agenda.TestCsrf.csrf;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.jayway.jsonpath.JsonPath;
+import io.github.ilsic.agenda.outbox.OutboxPublisher;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,6 +29,7 @@ class DemoDataTest {
 
   @Autowired MockMvcTester mvc;
   @Autowired JdbcClient jdbc;
+  @Autowired OutboxPublisher outboxPublisher;
 
   @ParameterizedTest
   @CsvSource({"admin, admin-demo", "segreteria, segreteria-demo"})
@@ -58,6 +62,25 @@ class DemoDataTest {
         assertThat(slots).as("slots of doctor %s", doctorId).isNotEmpty();
       }
     }
+  }
+
+  /** The demo events are written in SQL: this proves the application can still read them. */
+  @Test
+  void theDemoBookingsAreAnnouncedByEmailThroughKafka() {
+    outboxPublisher.publishPending();
+
+    await()
+        .atMost(Duration.ofSeconds(20))
+        .untilAsserted(() ->
+            assertThat(
+                    jdbc.sql(
+                            """
+                            SELECT count(*) FROM sent_email
+                             WHERE subject LIKE 'Prenotazione confermata - codice DEMO%'
+                            """)
+                        .query(Long.class)
+                        .single())
+                .isEqualTo(8));
   }
 
   @Test
