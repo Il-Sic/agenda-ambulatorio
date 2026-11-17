@@ -11,6 +11,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 /** Inserts fixtures with plain SQL, so tests do not depend on the code they verify. */
 public class TestData {
 
+  public static final String PATIENT_EMAIL = "paziente@example.com";
+
   private final JdbcClient jdbc;
   private final AtomicInteger sequence = new AtomicInteger();
 
@@ -76,16 +78,23 @@ public class TestData {
   }
 
   public long appointment(long doctorId, Instant startsAt, Instant endsAt, String status) {
+    String code = "T%07d".formatted(sequence.incrementAndGet());
+    return appointment(doctorId, code, startsAt, endsAt, status);
+  }
+
+  public long appointment(
+      long doctorId, String code, Instant startsAt, Instant endsAt, String status) {
     return jdbc.sql(
             """
             INSERT INTO appointment
                 (code, doctor_id, starts_at, ends_at, status,
                  patient_name, patient_email, patient_phone, created_at)
             VALUES (:code, :doctorId, :startsAt, :endsAt, :status,
-                    'Paziente Di Prova', 'paziente@example.com', '3330000000', now())
+                    'Paziente Di Prova', :email, '3330000000', now())
             RETURNING id
             """)
-        .param("code", "T%07d".formatted(sequence.incrementAndGet()))
+        .param("code", code)
+        .param("email", PATIENT_EMAIL)
         .param("doctorId", doctorId)
         .param("startsAt", startsAt.atOffset(ZoneOffset.UTC))
         .param("endsAt", endsAt.atOffset(ZoneOffset.UTC))
