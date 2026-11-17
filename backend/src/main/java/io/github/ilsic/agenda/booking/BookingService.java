@@ -3,7 +3,7 @@ package io.github.ilsic.agenda.booking;
 import io.github.ilsic.agenda.scheduling.DoctorDirectory;
 import io.github.ilsic.agenda.scheduling.DoctorSummary;
 import io.github.ilsic.agenda.shared.ClinicTime;
-import java.sql.SQLException;
+import io.github.ilsic.agenda.shared.DatabaseErrors;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,10 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 class BookingService {
 
   static final int MAX_DAYS_PER_SEARCH = 31;
-
-  // PostgreSQL error codes for "you lost the race for this slot".
-  private static final String EXCLUSION_VIOLATION = "23P01";
-  private static final String DEADLOCK_DETECTED = "40P01";
 
   private final AppointmentRepository appointments;
   private final FreeSlotFinder freeSlots;
@@ -111,8 +107,6 @@ class BookingService {
    * survives and the other request lost.
    */
   private static boolean lostTheRaceForTheSlot(DataAccessException exception) {
-    return exception.getMostSpecificCause() instanceof SQLException sqlException
-        && (EXCLUSION_VIOLATION.equals(sqlException.getSQLState())
-            || DEADLOCK_DETECTED.equals(sqlException.getSQLState()));
+    return DatabaseErrors.isExclusionViolation(exception) || DatabaseErrors.isDeadlock(exception);
   }
 }
