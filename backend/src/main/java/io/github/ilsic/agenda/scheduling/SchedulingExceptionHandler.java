@@ -14,4 +14,28 @@ class SchedulingExceptionHandler {
     return Problems.of(
         HttpStatus.NOT_FOUND, "doctor-not-found", "Doctor not found", exception.getMessage());
   }
+
+  @ExceptionHandler
+  ProblemDetail invalidAvailability(InvalidAvailabilityException exception) {
+    return Problems.of(
+        HttpStatus.BAD_REQUEST,
+        "invalid-availability",
+        "Invalid availability",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler
+  ProblemDetail availabilityOverlap(AvailabilityOverlapException exception) {
+    return Problems.of(
+        HttpStatus.CONFLICT,
+        "availability-overlap",
+        "Availability overlaps",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler
+  ProblemDetail closureExists(ClosureExistsException exception) {
+    return Problems.of(
+        HttpStatus.CONFLICT, "closure-exists", "Day already closed", exception.getMessage());
+  }
 }
