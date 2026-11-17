@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 import { Notice } from '../components/Notice';
 import { Slip } from '../components/Slip';
 import { addDays, formatDateTime, todayAtTheClinic } from '../lib/dates';
-import { numberOrUndefined } from '../lib/params';
+import { dayOrUndefined, instantOrUndefined, numberOrUndefined } from '../lib/params';
 import { lineColor } from '../lib/specialty';
 import { ChoiceList } from './ChoiceList';
 import { DetailsStep } from './DetailsStep';
@@ -17,6 +17,8 @@ import { stepHeadingId } from './stepHeading';
 import type { PatientDetails } from './validation';
 
 const DAYS_PER_PAGE = 14;
+// The server offers slots up to this many days ahead, and no further.
+const BOOKING_HORIZON_DAYS = 90;
 
 /**
  * The choices made so far live in the URL (?specialita=1&medico=7&orario=…): the browser's
@@ -27,9 +29,9 @@ export function BookingPage() {
   const queryClient = useQueryClient();
   const specialtyId = numberOrUndefined(params.get('specialita'));
   const doctorId = numberOrUndefined(params.get('medico'));
-  const startsAt = params.get('orario') ?? undefined;
+  const startsAt = instantOrUndefined(params.get('orario'));
   const today = todayAtTheClinic();
-  const from = params.get('dal') ?? today;
+  const from = dayOrUndefined(params.get('dal')) ?? today;
   const to = addDays(from, DAYS_PER_PAGE - 1);
 
   const [details, setDetails] = useState<PatientDetails>();
@@ -208,13 +210,17 @@ export function BookingPage() {
                       }
                     : undefined
                 }
-                onLater={() => {
-                  goTo({
-                    specialita: specialtyId,
-                    medico: doctorId,
-                    dal: addDays(from, DAYS_PER_PAGE),
-                  });
-                }}
+                onLater={
+                  addDays(from, DAYS_PER_PAGE) <= addDays(today, BOOKING_HORIZON_DAYS)
+                    ? () => {
+                        goTo({
+                          specialita: specialtyId,
+                          medico: doctorId,
+                          dal: addDays(from, DAYS_PER_PAGE),
+                        });
+                      }
+                    : undefined
+                }
               />
             )}
           </Loadable>

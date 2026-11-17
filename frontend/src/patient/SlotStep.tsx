@@ -15,7 +15,8 @@ type SlotStepProps = {
   to: string;
   onChoose: (startsAt: string) => void;
   onEarlier?: () => void;
-  onLater: () => void;
+  /** Absent on the last page the clinic takes bookings for. */
+  onLater?: () => void;
 };
 
 /** Pick a day among those with free slots, then a time on that day. */
@@ -74,8 +75,8 @@ export function SlotStep({ slots, from, to, onChoose, onEarlier, onLater }: Slot
         </>
       ) : (
         <p>
-          Nessun orario libero dal {formatDayShort(from)} al {formatDayShort(to)}. Prova nei giorni
-          successivi.
+          Nessun orario libero dal {formatDayShort(from)} al {formatDayShort(to)}.
+          {onLater ? ' Prova nei giorni successivi.' : ' Le prenotazioni non vanno oltre.'}
         </p>
       )}
       <div className="flex flex-wrap gap-3">
@@ -84,9 +85,11 @@ export function SlotStep({ slots, from, to, onChoose, onEarlier, onLater }: Slot
             Giorni precedenti
           </Button>
         )}
-        <Button variant="secondary" onClick={onLater}>
-          Giorni successivi
-        </Button>
+        {onLater && (
+          <Button variant="secondary" onClick={onLater}>
+            Giorni successivi
+          </Button>
+        )}
       </div>
     </div>
   );

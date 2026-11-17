@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, expect, test } from 'vitest';
+import { addDays, todayAtTheClinic } from '../lib/dates';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
 
@@ -163,4 +164,21 @@ test('says so when the list of specialties cannot be loaded', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Connessione non riuscita. Controlla la rete e riprova.',
   );
+});
+
+test('nonsense typed into the address bar is ignored instead of breaking the page', async () => {
+  renderApp('/?specialita=1&medico=7&dal=abc&orario=nonsense');
+
+  expect(await screen.findByRole('button', { name: '09:00' })).toBeVisible();
+});
+
+test('does not offer days beyond the ninety the clinic takes bookings for', async () => {
+  server.use(http.get('*/api/v1/doctors/7/slots', () => HttpResponse.json([])));
+  const lastPage = addDays(todayAtTheClinic(), 84);
+
+  renderApp(`/?specialita=1&medico=7&dal=${lastPage}`);
+
+  expect(await screen.findByText(/Nessun orario libero/)).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Giorni precedenti' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Giorni successivi' })).not.toBeInTheDocument();
 });
