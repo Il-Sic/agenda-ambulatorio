@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router';
 import { api, unwrap, type Schemas } from '../api/client';
@@ -9,9 +10,9 @@ import { Notice } from '../components/Notice';
 import { SelectField } from '../components/SelectField';
 import { numberOrUndefined } from '../lib/params';
 import { useStaffUser } from './useCurrentUser';
+import { availabilityWindow, type AvailabilityWindowForm } from './validation';
 
 type Window = Schemas['AvailabilityWindow'];
-type NewWindow = Schemas['AvailabilityRequest'];
 
 const WEEKDAYS: Record<Window['dayOfWeek'], string> = {
   MONDAY: 'lunedì',
@@ -129,7 +130,8 @@ function AddWindowForm({ doctorId, onAdded }: AddWindowFormProps) {
     setError,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<NewWindow>({
+  } = useForm<AvailabilityWindowForm>({
+    resolver: zodResolver(availabilityWindow),
     defaultValues: { dayOfWeek: 'MONDAY', startTime: '', endTime: '', slotMinutes: 30 },
   });
 
@@ -168,14 +170,9 @@ function AddWindowForm({ doctorId, onAdded }: AddWindowFormProps) {
           label="Dalle"
           type="time"
           error={errors.startTime?.message}
-          {...register('startTime', { required: 'Scrivi l’ora di inizio.' })}
+          {...register('startTime')}
         />
-        <Field
-          label="Alle"
-          type="time"
-          error={errors.endTime?.message}
-          {...register('endTime', { required: 'Scrivi l’ora di fine.' })}
-        />
+        <Field label="Alle" type="time" error={errors.endTime?.message} {...register('endTime')} />
         <SelectField
           label="Durata della visita"
           {...register('slotMinutes', { valueAsNumber: true })}

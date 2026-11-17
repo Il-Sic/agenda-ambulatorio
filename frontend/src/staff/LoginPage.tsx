@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Navigate, useNavigate } from 'react-router';
 import { signIn } from '../api/auth';
@@ -8,8 +9,7 @@ import { Button } from '../components/Button';
 import { Field } from '../components/Field';
 import { Notice } from '../components/Notice';
 import { useCurrentUser } from './useCurrentUser';
-
-type Credentials = { username: string; password: string };
+import { credentials, type Credentials } from './validation';
 
 export function LoginPage() {
   const { user } = useCurrentUser();
@@ -20,7 +20,10 @@ export function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<Credentials>({ defaultValues: { username: '', password: '' } });
+  } = useForm<Credentials>({
+    resolver: zodResolver(credentials),
+    defaultValues: { username: '', password: '' },
+  });
 
   const submit = handleSubmit(async ({ username, password }) => {
     try {
@@ -48,14 +51,14 @@ export function LoginPage() {
           autoCapitalize="none"
           spellCheck={false}
           error={errors.username?.message}
-          {...register('username', { required: 'Scrivi il nome utente.' })}
+          {...register('username')}
         />
         <Field
           label="Password"
           type="password"
           autoComplete="current-password"
           error={errors.password?.message}
-          {...register('password', { required: 'Scrivi la password.' })}
+          {...register('password')}
         />
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Accesso in corso…' : 'Accedi'}
