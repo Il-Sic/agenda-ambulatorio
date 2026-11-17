@@ -1,6 +1,7 @@
 package io.github.ilsic.agenda.shared;
 
 import java.net.URI;
+import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
@@ -14,5 +15,10 @@ public final class Problems {
     problem.setType(URI.create("/problems/" + slug));
     problem.setTitle(title);
     return problem;
+  }
+
+  /** "bad-request" for 400, "method-not-allowed" for 405, and so on. */
+  public static String slugOf(HttpStatus status) {
+    return status.name().toLowerCase(Locale.ROOT).replace('_', '-');
   }
 }

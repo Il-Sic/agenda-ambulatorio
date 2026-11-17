@@ -1,5 +1,6 @@
 package io.github.ilsic.agenda.identity;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,6 +28,10 @@ class SecurityConfiguration {
       throws Exception {
     return http.authorizeHttpRequests(requests ->
             requests
+                // Reporting an error is not a request of its own: without this, an unexpected
+                // failure would come out as "sign in" or "not allowed".
+                .dispatcherTypeMatchers(DispatcherType.ERROR)
+                .permitAll()
                 // Patients have no account.
                 .requestMatchers(HttpMethod.GET, "/api/v1/specialties", "/api/v1/doctors/**")
                 .permitAll()
