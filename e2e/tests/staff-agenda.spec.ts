@@ -76,3 +76,29 @@ test('the staff area is closed to visitors who have not signed in', async ({ pag
   await expect(page.getByRole('heading', { name: 'Accesso segreteria' })).toBeVisible();
   await expectNoAccessibilityViolations(page);
 });
+
+test('keyboard focus stays visible on the dark header of the staff area', async ({ page }) => {
+  await signIn(page, 'segreteria', 'segreteria-demo');
+  const link = page.getByRole('link', { name: 'Orari dei medici' });
+
+  // Reach the link the way a keyboard user does, so the browser shows its focus ring.
+  for (let presses = 0; presses < 12; presses++) {
+    await page.keyboard.press('Tab');
+    if (await link.evaluate((element) => element === document.activeElement)) {
+      break;
+    }
+  }
+  await expect(link).toBeFocused();
+
+  const colours = await link.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const header = element.closest('header');
+    return {
+      ringStyle: style.outlineStyle,
+      ring: style.outlineColor,
+      background: header ? getComputedStyle(header).backgroundColor : '',
+    };
+  });
+  expect(colours.ringStyle).not.toBe('none');
+  expect(colours.ring).not.toBe(colours.background);
+});
