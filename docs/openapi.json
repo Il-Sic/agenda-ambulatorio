@@ -233,7 +233,7 @@
     },
     "/api/v1/doctors/{doctorId}/slots" : {
       "get" : {
-        "description" : "Both days are included and are meant in the clinic's time zone.",
+        "description" : "Both days are included and are meant in the clinic's time zone. Visits can be booked from today up to 90 days ahead.",
         "operationId" : "freeSlots",
         "parameters" : [ {
           "in" : "path",
@@ -354,6 +354,26 @@
               }
             },
             "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "List the appointments of a day, earliest first",
@@ -362,7 +382,6 @@
     },
     "/api/v1/staff/appointments/{id}/arrival" : {
       "post" : {
-        "description" : "Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.",
         "operationId" : "markArrived",
         "parameters" : [ {
           "in" : "path",
@@ -382,7 +401,47 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "The appointment after the change"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unknown appointment (type /problems/appointment-not-found)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update)"
           }
         },
         "summary" : "Record that the patient has arrived",
@@ -391,7 +450,6 @@
     },
     "/api/v1/staff/appointments/{id}/cancellation" : {
       "post" : {
-        "description" : "Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.",
         "operationId" : "cancel",
         "parameters" : [ {
           "in" : "path",
@@ -411,7 +469,47 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "The appointment after the change"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unknown appointment (type /problems/appointment-not-found)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update)"
           }
         },
         "summary" : "Cancel a visit that has not started yet",
@@ -420,7 +518,6 @@
     },
     "/api/v1/staff/appointments/{id}/no-show" : {
       "post" : {
-        "description" : "Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.",
         "operationId" : "markNoShow",
         "parameters" : [ {
           "in" : "path",
@@ -440,7 +537,47 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "The appointment after the change"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unknown appointment (type /problems/appointment-not-found)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update)"
           }
         },
         "summary" : "Record that the patient did not show up",
@@ -462,6 +599,26 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "Remove a weekly availability window (admin)",
@@ -484,13 +641,32 @@
               }
             },
             "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "List today's and future closure days",
         "tags" : [ "Staff schedule" ]
       },
       "post" : {
-        "description" : "Answers 409 with type /problems/closure-exists if the day is already closed.",
         "operationId" : "close",
         "requestBody" : {
           "content" : {
@@ -511,7 +687,37 @@
                 }
               }
             },
-            "description" : "Created"
+            "description" : "The new closure day"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The day is already closed (type /problems/closure-exists)"
           }
         },
         "summary" : "Close the clinic on a day (admin)",
@@ -533,6 +739,26 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "Reopen a closed day (admin)",
@@ -555,6 +781,26 @@
               }
             },
             "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "List every doctor",
@@ -586,13 +832,32 @@
               }
             },
             "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "List the weekly availability of a doctor",
         "tags" : [ "Staff schedule" ]
       },
       "post" : {
-        "description" : "Answers 409 with type /problems/availability-overlap if it overlaps another.",
         "operationId" : "addAvailability",
         "parameters" : [ {
           "in" : "path",
@@ -622,7 +887,47 @@
                 }
               }
             },
-            "description" : "Created"
+            "description" : "The new window"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Ends before it starts or is shorter than one visit (type /problems/invalid-availability)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Overlaps another window of that weekday (type /problems/availability-overlap)"
           }
         },
         "summary" : "Add a weekly availability window (admin)",
@@ -645,6 +950,26 @@
               }
             },
             "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
           }
         },
         "summary" : "List the latest 50 e-mails sent to patients, newest first",

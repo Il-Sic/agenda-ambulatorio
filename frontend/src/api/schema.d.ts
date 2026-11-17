@@ -98,7 +98,7 @@ export interface paths {
         };
         /**
          * List the free slots of a doctor
-         * @description Both days are included and are meant in the clinic's time zone.
+         * @description Both days are included and are meant in the clinic's time zone. Visits can be booked from today up to 90 days ahead.
          */
         get: operations["freeSlots"];
         put?: never;
@@ -152,10 +152,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Record that the patient has arrived
-         * @description Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.
-         */
+        /** Record that the patient has arrived */
         post: operations["markArrived"];
         delete?: never;
         options?: never;
@@ -172,10 +169,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel a visit that has not started yet
-         * @description Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.
-         */
+        /** Cancel a visit that has not started yet */
         post: operations["cancel"];
         delete?: never;
         options?: never;
@@ -192,10 +186,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Record that the patient did not show up
-         * @description Answers 409 with type /problems/appointment-state when the change makes no sense for the appointment, or /problems/concurrent-update when someone else changed it first.
-         */
+        /** Record that the patient did not show up */
         post: operations["markNoShow"];
         delete?: never;
         options?: never;
@@ -230,10 +221,7 @@ export interface paths {
         /** List today's and future closure days */
         get: operations["closures"];
         put?: never;
-        /**
-         * Close the clinic on a day (admin)
-         * @description Answers 409 with type /problems/closure-exists if the day is already closed.
-         */
+        /** Close the clinic on a day (admin) */
         post: operations["close"];
         delete?: never;
         options?: never;
@@ -285,10 +273,7 @@ export interface paths {
         /** List the weekly availability of a doctor */
         get: operations["availability"];
         put?: never;
-        /**
-         * Add a weekly availability window (admin)
-         * @description Answers 409 with type /problems/availability-overlap if it overlaps another.
-         */
+        /** Add a weekly availability window (admin) */
         post: operations["addAvailability"];
         delete?: never;
         options?: never;
@@ -698,6 +683,24 @@ export interface operations {
                     "application/json": components["schemas"]["AgendaEntry"][];
                 };
             };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     markArrived: {
@@ -711,13 +714,49 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description The appointment after the change */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AgendaEntry"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown appointment (type /problems/appointment-not-found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -733,13 +772,49 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description The appointment after the change */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AgendaEntry"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown appointment (type /problems/appointment-not-found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -755,13 +830,49 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description The appointment after the change */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AgendaEntry"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown appointment (type /problems/appointment-not-found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -784,6 +895,24 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     closures: {
@@ -804,6 +933,24 @@ export interface operations {
                     "application/json": components["schemas"]["Closure"][];
                 };
             };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     close: {
@@ -819,13 +966,40 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description The new closure day */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Closure"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The day is already closed (type /problems/closure-exists) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -848,6 +1022,24 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     doctors: {
@@ -866,6 +1058,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoctorSummary"][];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -890,6 +1100,24 @@ export interface operations {
                     "application/json": components["schemas"]["AvailabilityWindow"][];
                 };
             };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     addAvailability: {
@@ -907,13 +1135,49 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description The new window */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["AvailabilityWindow"];
+                };
+            };
+            /** @description Ends before it starts or is shorter than one visit (type /problems/invalid-availability) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Overlaps another window of that weekday (type /problems/availability-overlap) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -934,6 +1198,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Notification"][];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
