@@ -46,7 +46,7 @@ Valgono solo in questa demo locale: le crea il caricamento dei dati di esempio, 
 
 Un giro consigliato: prenota una visita, poi entra come `segreteria` e apri «Notifiche inviate». L'email di conferma che trovi lì è passata da Kafka.
 
-Se la porta 8080 è occupata, copia `.env.example` in `.env` e cambia `APP_PORT`. Per ripartire dai dati iniziali: `docker compose down -v`.
+Se la porta 8080 è occupata, copia `.env.example` in `.env` e cambia `APP_PORT`. Il sito risponde solo dal tuo computer; per aprirlo da un telefono sulla stessa rete imposta `APP_BIND=0.0.0.0` nello stesso file. Per ripartire dai dati iniziali: `docker compose down -v`.
 
 ![L'agenda del giorno vista dalla segreteria](docs/screenshots/computer-agenda.png)
 
@@ -174,7 +174,7 @@ cd ../frontend && npm run api:generate                                   # aggio
 - **Nessun limite ai tentativi.** Chi prova molti codici di prenotazione o molte password non viene rallentato. Metterei un limite per indirizzo IP.
 - **Chiusure e orari non toccano le visite già prenotate.** Se si chiude un giorno, le visite già in agenda restano e vanno annullate a mano.
 - **Outbox senza pulizia.** Le righe pubblicate restano in tabella. Servirebbe un lavoro periodico che le archivia.
-- **Messaggi illeggibili scartati dopo alcuni tentativi.** Aggiungerei un topic per i messaggi non elaborabili.
+- **Un evento che non si riesce a elaborare viene scartato dopo dieci tentativi ravvicinati.** Va bene per un messaggio illeggibile; se invece il database resta fermo più a lungo, quell'email si perde. Aggiungerei tentativi distanziati nel tempo e un topic per i messaggi non elaborabili.
 - **Kafka a un solo nodo e HTTP in chiaro.** Va bene per una demo, non per la produzione.
 - **Prossime funzioni:** chiave di idempotenza sulla prenotazione, promemoria 24 ore prima della visita, chart Helm.
 
