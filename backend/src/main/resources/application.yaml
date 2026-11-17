@@ -17,6 +17,11 @@ spring:
   mvc:
     format:
       date: iso
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      # A consumer group that starts for the first time reads the events already on the topic.
+      auto-offset-reset: earliest
 
 server:
   servlet:

@@ -3,6 +3,7 @@ package io.github.ilsic.agenda;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /** Real infrastructure for integration tests and for {@link TestAgendaApplication}. */
@@ -13,5 +14,11 @@ public class TestcontainersConfiguration {
   @ServiceConnection
   PostgreSQLContainer postgres() {
     return new PostgreSQLContainer("postgres:18-alpine");
+  }
+
+  @Bean
+  @ServiceConnection
+  KafkaContainer kafka() {
+    return new KafkaContainer("apache/kafka:4.4.0");
   }
 }
