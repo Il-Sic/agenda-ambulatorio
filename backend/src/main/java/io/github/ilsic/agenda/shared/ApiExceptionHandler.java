@@ -1,5 +1,6 @@
 package io.github.ilsic.agenda.shared;
 
+import java.net.URI;
 import java.util.List;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +20,23 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  */
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+  private static final URI NO_TYPE = URI.create("about:blank");
+
+  /** Spring's own errors (malformed JSON, wrong parameter…) get a type like all the others. */
+  @Override
+  protected ResponseEntity<Object> createResponseEntity(
+      Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    if (body instanceof ProblemDetail problem && hasNoType(problem) && status != null) {
+      problem.setType(URI.create("/problems/" + Problems.slugOf(status)));
+    }
+    return super.createResponseEntity(body, headers, statusCode, request);
+  }
+
+  private static boolean hasNoType(ProblemDetail problem) {
+    return problem.getType() == null || NO_TYPE.equals(problem.getType());
+  }
 
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
