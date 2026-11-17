@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 import { Notice } from '../components/Notice';
 import { SelectField } from '../components/SelectField';
 import { addDays, dayKey, formatDayKeyLong, formatTime, todayAtTheClinic } from '../lib/dates';
-import { numberOrUndefined } from '../lib/params';
+import { dayOrUndefined, numberOrUndefined } from '../lib/params';
 import { lineColor } from '../lib/specialty';
 
 type Visit = Schemas['AgendaEntry'];
@@ -37,7 +37,7 @@ export function AgendaPage() {
   const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
   const today = todayAtTheClinic();
-  const day = params.get('giorno') ?? today;
+  const day = dayOrUndefined(params.get('giorno')) ?? today;
   const doctorId = numberOrUndefined(params.get('medico'));
   const [failure, setFailure] = useState<string>();
 

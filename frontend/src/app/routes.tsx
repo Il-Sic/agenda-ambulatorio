@@ -1,41 +1,38 @@
-import type { ComponentType } from 'react';
 import type { RouteObject } from 'react-router';
 import { BookingPage } from '../patient/BookingPage';
 import { ManageBookingPage } from '../patient/ManageBookingPage';
+import { ErrorPage } from './ErrorPage';
 import { Layout } from './Layout';
 import { NotFoundPage } from './NotFoundPage';
 
-type StaffModule = typeof import('../staff');
-type StaffPage = {
-  [Name in keyof StaffModule]: StaffModule[Name] extends ComponentType ? Name : never;
-}[keyof StaffModule];
-
-/** Loads a staff page on demand: the staff area is downloaded only by who opens it. */
-function staff(page: StaffPage) {
-  return async () => ({ Component: (await import('../staff'))[page] });
-}
-
+// The staff area is one chunk, downloaded only by who opens it: never by a patient on a phone.
+const staff = () => import('../staff');
 const loading = <p className="p-8 text-ink-soft">Caricamento…</p>;
 
 export const routes: RouteObject[] = [
   {
     path: '/segreteria',
-    lazy: staff('StaffArea'),
+    lazy: async () => ({ Component: (await staff()).StaffArea }),
     hydrateFallbackElement: loading,
+    errorElement: <ErrorPage />,
     children: [
-      { index: true, lazy: staff('AgendaPage') },
-      { path: 'orari', lazy: staff('SchedulePage') },
-      { path: 'chiusure', lazy: staff('ClosuresPage') },
-      { path: 'notifiche', lazy: staff('NotificationsPage') },
+      { index: true, lazy: async () => ({ Component: (await staff()).AgendaPage }) },
+      { path: 'orari', lazy: async () => ({ Component: (await staff()).SchedulePage }) },
+      { path: 'chiusure', lazy: async () => ({ Component: (await staff()).ClosuresPage }) },
+      { path: 'notifiche', lazy: async () => ({ Component: (await staff()).NotificationsPage }) },
     ],
   },
   {
     element: <Layout />,
     hydrateFallbackElement: loading,
+    errorElement: <ErrorPage />,
     children: [
       { path: '/', element: <BookingPage /> },
       { path: '/prenotazione', element: <ManageBookingPage /> },
-      { path: '/segreteria/accesso', lazy: staff('LoginPage') },
+      {
+        path: '/segreteria/accesso',
+        lazy: async () => ({ Component: (await staff()).LoginPage }),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

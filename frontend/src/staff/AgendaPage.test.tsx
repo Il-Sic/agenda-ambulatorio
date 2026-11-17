@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, expect, test } from 'vitest';
+import { formatDayKeyLong, todayAtTheClinic } from '../lib/dates';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
 import { DOCTORS, problem, signedInAs } from '../test/staff';
@@ -158,4 +159,14 @@ test('moves to the next day and can show a single doctor', async () => {
 
   await screen.findByText('Nessuna visita in questo giorno.');
   expect(requests).toContain('?date=2026-01-13&doctorId=6');
+});
+
+test('an unreadable day in the address shows today instead of breaking the page', async () => {
+  server.use(http.get('*/api/v1/staff/agenda', () => HttpResponse.json([])));
+
+  renderApp('/segreteria?giorno=abc');
+
+  expect(
+    await screen.findByRole('heading', { name: formatDayKeyLong(todayAtTheClinic()) }),
+  ).toBeVisible();
 });
