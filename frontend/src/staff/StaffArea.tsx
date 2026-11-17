@@ -1,9 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router';
 import { signOut } from '../api/auth';
 import { messageFor } from '../api/problem';
 import { Button } from '../components/Button';
 import { Notice } from '../components/Notice';
+import { SkipLink } from '../components/SkipLink';
 import { useCurrentUser } from './useCurrentUser';
 
 const NAV_LINK =
@@ -14,13 +16,20 @@ export function StaffArea() {
   const { user, signedOut, failure, refetch } = useCurrentUser();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [signOutFailure, setSignOutFailure] = useState<string>();
 
   if (signedOut) {
     return <Navigate to="/segreteria/accesso" replace />;
   }
 
   async function leave() {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      // Still signed in: better to say so than to pretend otherwise.
+      setSignOutFailure(messageFor(error));
+      return;
+    }
     // Nothing a signed-in person has seen stays in memory.
     queryClient.clear();
     await navigate('/segreteria/accesso');
@@ -28,13 +37,8 @@ export function StaffArea() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <a
-        href="#contenuto"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-10 focus:bg-paper focus:p-3 focus:text-ink"
-      >
-        Vai al contenuto
-      </a>
-      <header className="bg-ink text-white">
+      <SkipLink />
+      <header className="on-ink bg-ink text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-1 px-4 py-2">
           <Link to="/segreteria" className="text-lg font-bold">
             Segreteria Valdoria
@@ -59,7 +63,7 @@ export function StaffArea() {
               <button
                 type="button"
                 onClick={() => void leave()}
-                className="min-h-11 rounded border-2 border-white px-3 font-bold hover:bg-white hover:text-ink focus-visible:outline-white"
+                className="min-h-11 rounded border-2 border-white px-3 font-bold hover:bg-white hover:text-ink"
               >
                 Esci
               </button>
@@ -68,6 +72,11 @@ export function StaffArea() {
         </div>
       </header>
       <main id="contenuto" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        {signOutFailure && (
+          <div className="mb-6">
+            <Notice kind="error">{signOutFailure}</Notice>
+          </div>
+        )}
         {user && <Outlet context={user} />}
         {failure !== null && failure !== undefined && (
           <div className="space-y-3">

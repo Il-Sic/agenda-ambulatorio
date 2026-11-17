@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 
-type NoticeProps = { kind: 'error' | 'success' | 'info'; children: ReactNode };
+type NoticeProps = { kind: 'error' | 'success'; children: ReactNode };
 
 const STYLES = {
   error: 'border-danger bg-danger-soft',
   success: 'border-ok bg-ok-soft',
-  info: 'border-ink-soft bg-paper',
 };
 
 /** A message about what just happened. Errors interrupt the screen reader, the rest waits. */
