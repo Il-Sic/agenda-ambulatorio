@@ -1,0 +1,35 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Java / Maven
+target/
+*.class
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Playwright
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Personal notes
+NOTE_STUDIO.md
+
+# Logs
+*.log
