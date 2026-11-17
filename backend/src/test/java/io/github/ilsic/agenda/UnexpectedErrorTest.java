@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = "agenda.outbox.scheduling.enabled=false")
+    properties = "agenda.scheduling.enabled=false")
 @Import({
   TestcontainersConfiguration.class,
   TestClockConfiguration.class,
