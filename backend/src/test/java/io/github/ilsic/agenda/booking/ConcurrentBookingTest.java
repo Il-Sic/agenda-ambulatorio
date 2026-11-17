@@ -1,5 +1,6 @@
 package io.github.ilsic.agenda.booking;
 
+import static io.github.ilsic.agenda.TestCsrf.csrf;
 import static java.time.DayOfWeek.MONDAY;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +54,7 @@ class ConcurrentBookingTest {
         runAtTheSameTime(patient ->
             mvc.post()
                 .uri("/api/v1/bookings")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
