@@ -46,7 +46,7 @@ They only exist in this local demo: they are created by the demo data, which is 
 
 A suggested tour: book a visit, then sign in as `segreteria` and open "Notifiche inviate". The confirmation e-mail you find there travelled through Kafka.
 
-If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. To start again from the initial data: `docker compose down -v`.
+If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The site only answers from your own computer; to open it from a phone on the same network set `APP_BIND=0.0.0.0` in the same file. To start again from the initial data: `docker compose down -v`.
 
 ![The agenda of the day as the staff see it](docs/screenshots/computer-agenda.png)
 
@@ -174,7 +174,7 @@ cd ../frontend && npm run api:generate                                   # updat
 - **No attempt limit.** Someone trying many booking codes or passwords is not slowed down. I would add a limit per IP address.
 - **Closures and hours do not touch existing bookings.** If a day is closed, the visits already in the agenda stay there and must be cancelled by hand.
 - **Outbox without clean-up.** Published rows stay in the table. A periodic job should archive them.
-- **Unreadable messages are dropped after a few attempts.** I would add a topic for messages that cannot be processed.
+- **An event that cannot be processed is dropped after ten attempts in quick succession.** That is right for an unreadable message; if the database stays down longer, that e-mail is lost. I would add retries spaced out over time and a topic for messages that cannot be processed.
 - **Single-node Kafka and plain HTTP.** Fine for a demo, not for production.
 - **Next features:** idempotency key on booking, a reminder 24 hours before the visit, a Helm chart.
 
