@@ -6,7 +6,7 @@
 -- Every date is relative to the day the database is created.
 
 -- crypt() makes the same BCrypt hashes Spring Security checks. The passwords are the demo
--- credentials published in the README; they exist nowhere else.
+-- credentials published in the README and shown on the sign-in page.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 INSERT INTO staff_user (username, display_name, role, password_hash)
@@ -62,8 +62,9 @@ SELECT holiday.day, holiday.reason
        ) AS holiday(day, reason)
  WHERE holiday.day >= CAST(now() AT TIME ZONE 'Europe/Rome' AS date);
 
--- One slot in three, from yesterday to the day after tomorrow, already has a patient.
--- Visits that have started are marked as arrived (now and then as a no-show).
+-- One slot in three, from yesterday to a week from now, already has a patient. A whole week
+-- ahead means there are visits still to come whatever day this runs, weekends and holidays
+-- included. Visits that have started are marked as arrived (now and then as a no-show).
 WITH today AS (
     SELECT CAST(now() AT TIME ZONE 'Europe/Rome' AS date) AS day
 ), slots AS (
@@ -72,7 +73,7 @@ WITH today AS (
            slot.starts_at + make_interval(mins => wa.slot_minutes) AS ends_at,
            row_number() OVER (ORDER BY slot.starts_at, wa.doctor_id) AS position
       FROM today
-     CROSS JOIN generate_series(-1, 2) AS day_offset
+     CROSS JOIN generate_series(-1, 7) AS day_offset
       JOIN weekly_availability wa
         ON wa.day_of_week = EXTRACT(ISODOW FROM today.day + day_offset)
      CROSS JOIN LATERAL generate_series(
