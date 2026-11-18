@@ -14,10 +14,13 @@ record DayPlan(LocalDate date, String closure, List<DoctorDay> doctors) {
   /**
    * One doctor's day. Hours are empty when the doctor does not receive; free slots are offered only
    * from now to the end of the booking horizon; appointments include cancelled ones.
+   *
+   * @param lastName what heads the doctor's column, where the full name does not fit
    */
   record DoctorDay(
       long id,
       String name,
+      String lastName,
       String specialty,
       List<Slot> hours,
       List<Slot> freeSlots,

@@ -478,12 +478,14 @@ export interface components {
             hours: components["schemas"]["Slot"][];
             /** Format: int64 */
             id: number;
+            lastName: string;
             name: string;
             specialty: string;
         };
         DoctorSummary: {
             /** Format: int64 */
             id: number;
+            lastName: string;
             name: string;
             specialty: string;
         };

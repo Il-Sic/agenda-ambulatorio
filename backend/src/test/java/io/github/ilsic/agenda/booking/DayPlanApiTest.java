@@ -65,7 +65,8 @@ class DayPlanApiTest {
               "closure": "",
               "doctors": [
                 {
-                  "id": %d, "name": "Dott.ssa Elena Ferri", "specialty": "Ortopedia",
+                  "id": %d, "name": "Dott.ssa Elena Ferri", "lastName": "Ferri",
+                  "specialty": "Ortopedia",
                   "hours": [{"startsAt": "2027-02-22T14:00:00Z", "endsAt": "2027-02-22T15:00:00Z"}],
                   "freeSlots": [
                     {"startsAt": "2027-02-22T14:00:00Z", "endsAt": "2027-02-22T14:20:00Z"},
