@@ -41,4 +41,9 @@ class Doctor {
   String displayName() {
     return title + " " + firstName + " " + lastName;
   }
+
+  /** How a patient refers to the doctor in conversation: "Dott.ssa Marchetti". */
+  String shortName() {
+    return title + " " + lastName;
+  }
 }

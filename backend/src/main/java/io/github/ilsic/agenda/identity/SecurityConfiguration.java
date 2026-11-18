@@ -33,7 +33,11 @@ class SecurityConfiguration {
                 .dispatcherTypeMatchers(DispatcherType.ERROR)
                 .permitAll()
                 // Patients have no account.
-                .requestMatchers(HttpMethod.GET, "/api/v1/specialties", "/api/v1/doctors/**")
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/v1/specialties",
+                    "/api/v1/doctors/**",
+                    "/api/v1/first-free-slots")
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/bookings/**")
                 .permitAll()

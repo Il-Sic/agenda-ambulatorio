@@ -109,6 +109,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/first-free-slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Give the first free slot of each specialty
+         * @description Looks from now up to 90 days ahead, among all the doctors of each specialty. A specialty with no free slot in that period is left out.
+         */
+        get: operations["firstFreeSlots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/specialties": {
         parameters: {
             query?: never;
@@ -116,7 +136,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the specialties, in alphabetical order */
+        /**
+         * List the specialties, in alphabetical order
+         * @description Each with its doctors by title and surname, in alphabetical order.
+         */
         get: operations["specialties"];
         put?: never;
         post?: never;
@@ -391,6 +414,16 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        FirstFreeSlot: {
+            /** Format: int64 */
+            doctorId: number;
+            /** Format: date-time */
+            endsAt: string;
+            /** Format: int64 */
+            specialtyId: number;
+            /** Format: date-time */
+            startsAt: string;
+        };
         InvalidField: {
             field: string;
             message: string;
@@ -423,6 +456,7 @@ export interface components {
             startsAt: string;
         };
         SpecialtySummary: {
+            doctors: string[];
             /** Format: int64 */
             id: number;
             name: string;
@@ -641,6 +675,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    firstFreeSlots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One slot per specialty */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirstFreeSlot"][];
                 };
             };
         };

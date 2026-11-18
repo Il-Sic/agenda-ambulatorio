@@ -308,8 +308,32 @@
         "tags" : [ "Booking" ]
       }
     },
+    "/api/v1/first-free-slots" : {
+      "get" : {
+        "description" : "Looks from now up to 90 days ahead, among all the doctors of each specialty. A specialty with no free slot in that period is left out.",
+        "operationId" : "firstFreeSlots",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FirstFreeSlot"
+                  }
+                }
+              }
+            },
+            "description" : "One slot per specialty"
+          }
+        },
+        "summary" : "Give the first free slot of each specialty",
+        "tags" : [ "Booking" ]
+      }
+    },
     "/api/v1/specialties" : {
       "get" : {
+        "description" : "Each with its doctors by title and surname, in alphabetical order.",
         "operationId" : "specialties",
         "responses" : {
           "200" : {
@@ -1214,6 +1238,28 @@
         },
         "required" : [ "email" ]
       },
+      "FirstFreeSlot" : {
+        "type" : "object",
+        "properties" : {
+          "doctorId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "specialtyId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "doctorId", "endsAt", "specialtyId", "startsAt" ]
+      },
       "InvalidField" : {
         "type" : "object",
         "properties" : {
@@ -1297,6 +1343,12 @@
       "SpecialtySummary" : {
         "type" : "object",
         "properties" : {
+          "doctors" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "id" : {
             "type" : "integer",
             "format" : "int64"
@@ -1305,7 +1357,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "id", "name" ]
+        "required" : [ "doctors", "id", "name" ]
       }
     }
   }
