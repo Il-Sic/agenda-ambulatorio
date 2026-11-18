@@ -25,6 +25,7 @@ class AgendaService {
   private final OpeningHours openingHours;
   private final FreeSlotFinder freeSlots;
   private final BookingEvents events;
+  private final CallNumbers callNumbers;
   private final Clock clock;
 
   AgendaService(
@@ -33,12 +34,14 @@ class AgendaService {
       OpeningHours openingHours,
       FreeSlotFinder freeSlots,
       BookingEvents events,
+      CallNumbers callNumbers,
       Clock clock) {
     this.appointments = appointments;
     this.doctors = doctors;
     this.openingHours = openingHours;
     this.freeSlots = freeSlots;
     this.events = events;
+    this.callNumbers = callNumbers;
     this.clock = clock;
   }
 
@@ -87,9 +90,20 @@ class AgendaService {
         .toList();
   }
 
+  /** On the day of the visit the patient also takes the next number, from the same transaction. */
   @Transactional
   AgendaEntry markArrived(long appointmentId) {
-    return change(appointmentId, Appointment::markArrived);
+    return change(
+        appointmentId,
+        (appointment, now) ->
+            appointment.markArrived(
+                now, () -> callNumbers.next(LocalDate.ofInstant(now, ClinicTime.ZONE))));
+  }
+
+  /** The number goes on the waiting room screen. */
+  @Transactional
+  AgendaEntry call(long appointmentId) {
+    return change(appointmentId, Appointment::call);
   }
 
   @Transactional

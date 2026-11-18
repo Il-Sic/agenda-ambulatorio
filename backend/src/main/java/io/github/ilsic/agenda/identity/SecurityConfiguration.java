@@ -41,6 +41,9 @@ class SecurityConfiguration {
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/bookings/**")
                 .permitAll()
+                // The screen in the waiting room signs in as nobody: it shows numbers, not names.
+                .requestMatchers(HttpMethod.GET, "/api/v1/waiting-room/**")
+                .permitAll()
                 // Admin-only operations are marked with @PreAuthorize where they are defined.
                 .requestMatchers("/api/v1/staff/**")
                 .hasAnyRole(StaffRole.STAFF.name(), StaffRole.ADMIN.name())

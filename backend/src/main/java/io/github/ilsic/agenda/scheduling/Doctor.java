@@ -21,6 +21,12 @@ class Doctor {
   private String firstName;
   private String lastName;
 
+  /** Where the doctor receives, such as "Ambulatorio 4"; null until it is set. */
+  private String room;
+
+  /** The floor of that room, such as "Primo piano"; null until it is set. */
+  private String floor;
+
   protected Doctor() {}
 
   Doctor(Specialty specialty, String title, String firstName, String lastName) {
@@ -44,6 +50,14 @@ class Doctor {
 
   String lastName() {
     return lastName;
+  }
+
+  String room() {
+    return room;
+  }
+
+  String floor() {
+    return floor;
   }
 
   /** How a patient refers to the doctor in conversation: "Dott.ssa Marchetti". */

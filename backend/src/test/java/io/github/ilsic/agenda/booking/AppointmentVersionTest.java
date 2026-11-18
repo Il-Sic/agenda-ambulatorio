@@ -33,7 +33,7 @@ class AppointmentVersionTest {
     seenByAnna.cancel(TestClockConfiguration.NOW);
     appointments.saveAndFlush(seenByAnna);
 
-    seenByBruno.markArrived(TestClockConfiguration.NOW);
+    seenByBruno.markArrived(TestClockConfiguration.NOW, () -> 1);
     assertThatThrownBy(() -> appointments.saveAndFlush(seenByBruno))
         .isInstanceOf(OptimisticLockingFailureException.class);
   }

@@ -223,6 +223,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/appointments/{id}/call": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Call the patient to the doctor's room
+         * @description Puts the number the patient took on arrival on the waiting room screen. Only a patient who arrived today can be called; calling again brings the number back on top.
+         */
+        post: operations["call"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/appointments/{id}/cancellation": {
         parameters: {
             query?: never;
@@ -381,11 +401,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/waiting-room/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's latest calls, the latest first
+         * @description At most five. Numbers and rooms only: the screen is public and never shows a name. Meant to be asked every few seconds.
+         */
+        get: operations["calls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AgendaEntry: {
+            /** Format: int32 */
+            callNumber: number | null;
+            /** Format: date-time */
+            calledAt: string | null;
             code: string;
             /** Format: int64 */
             doctorId: number;
@@ -425,13 +469,19 @@ export interface components {
             startTime: string;
         };
         BookingDetails: {
+            /** Format: int32 */
+            callNumber: number | null;
+            /** Format: date-time */
+            calledAt: string | null;
             code: string;
             /** Format: int64 */
             doctorId: number;
             doctorName: string;
             /** Format: date-time */
             endsAt: string;
+            floor: string;
             patientName: string;
+            room: string;
             specialty: string;
             /** Format: date-time */
             startsAt: string;
@@ -483,10 +533,12 @@ export interface components {
             specialty: string;
         };
         DoctorSummary: {
+            floor: string;
             /** Format: int64 */
             id: number;
             lastName: string;
             name: string;
+            room: string;
             specialty: string;
         };
         EmailRequest: {
@@ -545,6 +597,15 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+        };
+        WaitingRoomCall: {
+            /** Format: date-time */
+            calledAt: string;
+            floor: string;
+            /** Format: int32 */
+            number: number;
+            room: string;
+            specialty: string;
         };
     };
     responses: never;
@@ -912,6 +973,64 @@ export interface operations {
         };
     };
     markArrived: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The appointment after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaEntry"];
+                };
+            };
+            /** @description Not signed in (type /problems/unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not allowed for this role, or CSRF token missing (type /problems/forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unknown appointment (type /problems/appointment-not-found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    call: {
         parameters: {
             query?: never;
             header?: never;
@@ -1464,6 +1583,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    calls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingRoomCall"][];
                 };
             };
         };

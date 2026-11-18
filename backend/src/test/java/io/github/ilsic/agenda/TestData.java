@@ -28,7 +28,7 @@ public class TestData {
     jdbc.sql(
             """
             TRUNCATE appointment, closure_day, weekly_availability, doctor, specialty, staff_user,
-                     outbox_event, sent_email
+                     outbox_event, sent_email, call_counter
             RESTART IDENTITY CASCADE
             """)
         .update();
@@ -69,6 +69,38 @@ public class TestData {
         .param("lastName", lastName)
         .query(Long.class)
         .single();
+  }
+
+  public void room(long doctorId, String room, String floor) {
+    jdbc.sql("UPDATE doctor SET room = :room, floor = :floor WHERE id = :id")
+        .param("room", room)
+        .param("floor", floor)
+        .param("id", doctorId)
+        .update();
+  }
+
+  /** A patient who arrived, got the number and was called at that moment, before the test. */
+  public void called(long appointmentId, LocalDate day, int number, Instant calledAt) {
+    jdbc.sql(
+            """
+            UPDATE appointment
+               SET status = 'ARRIVED', call_day = :day, call_number = :number,
+                   called_at = :calledAt
+             WHERE id = :id
+            """)
+        .param("day", day)
+        .param("number", number)
+        .param("calledAt", calledAt.atOffset(ZoneOffset.UTC))
+        .param("id", appointmentId)
+        .update();
+  }
+
+  /** The numbers already given on a day, as if that many patients had arrived. */
+  public void numbersGiven(LocalDate day, int lastNumber) {
+    jdbc.sql("INSERT INTO call_counter (day, last_number) VALUES (:day, :lastNumber)")
+        .param("day", day)
+        .param("lastNumber", lastNumber)
+        .update();
   }
 
   public long availability(
