@@ -1,5 +1,6 @@
 # Serves the single-page app and forwards API calls to the backend,
-# so the browser only ever talks to one origin.
+# so the browser only ever talks to one origin. At start nginx fills in
+# BACKEND_URL from the environment (see the Dockerfile for its default).
 server {
   listen 8080;
   server_name _;
@@ -7,7 +8,7 @@ server {
   index index.html;
 
   location /api/ {
-    proxy_pass http://backend:8080;
+    proxy_pass ${BACKEND_URL};
     proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -15,7 +16,7 @@ server {
 
   # Interactive API documentation, served by the backend.
   location ~ ^/(v3/api-docs|swagger-ui) {
-    proxy_pass http://backend:8080;
+    proxy_pass ${BACKEND_URL};
     proxy_set_header Host $http_host;
   }
 

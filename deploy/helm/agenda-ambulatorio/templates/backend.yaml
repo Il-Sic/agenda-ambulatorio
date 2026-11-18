@@ -1,0 +1,121 @@
+{{- $name := printf "%s-backend" (include "agenda.fullname" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "agenda.labels" (dict "root" $ "component" "backend") | nindent 4 }}
+spec:
+  selector:
+    {{- include "agenda.selectorLabels" (dict "root" $ "component" "backend") | nindent 4 }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "agenda.labels" (dict "root" $ "component" "backend") | nindent 4 }}
+spec:
+  # Sessions live in the backend's memory (a known limit in the README): one instance only.
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "agenda.selectorLabels" (dict "root" $ "component" "backend") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agenda.labels" (dict "root" $ "component" "backend") | nindent 8 }}
+    spec:
+      {{- include "agenda.podDefaults" . | nindent 6 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Liquibase updates the schema as the backend starts: the database must answer first.
+        - name: wait-for-database
+          image: {{ .Values.postgresql.image }}
+          command:
+            - sh
+            - -c
+            # The user is named: this container's user does not exist in the image, and without
+            # a name pg_isready gives up before it even tries.
+            - until pg_isready -q -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER"; do echo "Waiting for $DB_HOST"; sleep 2; done
+          env:
+            - name: DB_HOST
+              value: {{ include "agenda.dbHost" . | quote }}
+            - name: DB_PORT
+              value: {{ include "agenda.dbPort" . | quote }}
+            - name: DB_USER
+              value: {{ .Values.postgresql.username | quote }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            {{- include "agenda.containerSecurity" . | nindent 12 }}
+            readOnlyRootFilesystem: true
+      containers:
+        - name: backend
+          image: {{ include "agenda.image" .Values.backend.image }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          env:
+            - name: DB_URL
+              value: {{ printf "jdbc:postgresql://%s:%s/%s" (include "agenda.dbHost" .) (include "agenda.dbPort" .) .Values.postgresql.database | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.postgresql.username | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "agenda.dbSecretName" . }}
+                  key: password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: {{ include "agenda.kafkaBootstrap" . | quote }}
+            - name: LIQUIBASE_CONTEXTS
+              value: {{ ternary "demo" "production" .Values.demoData }}
+            - name: SESSION_COOKIE_SECURE
+              value: {{ and .Values.ingress.enabled .Values.ingress.tls | quote }}
+            # Separate health groups for "alive" and "ready to take requests".
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
+            - name: JAVA_TOOL_OPTIONS
+              value: {{ .Values.backend.javaOptions | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          # Up to three minutes to start: the first start also loads the schema.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            {{- include "agenda.containerSecurity" . | nindent 12 }}
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

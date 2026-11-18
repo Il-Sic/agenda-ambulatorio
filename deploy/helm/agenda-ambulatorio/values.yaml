@@ -1,0 +1,86 @@
+# Invented doctors and patients, and the two demo accounts listed in the README. Without them the
+# database starts empty and nobody can sign in, since staff accounts are not created from the
+# application. The demo accounts are public knowledge: keep a demo release away from the internet.
+demoData: true
+
+backend:
+  # Built by `docker compose build` and loaded into the cluster (see the README). The images are
+  # not published to a registry: point repository and tag at your own registry to use one.
+  image:
+    repository: agenda-ambulatorio-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  # The JVM sizes its heap from the memory limit.
+  javaOptions: -XX:MaxRAMPercentage=75
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 768Mi
+
+frontend:
+  image:
+    repository: agenda-ambulatorio-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  # nginx keeps no state: as many copies as wanted.
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+# The way in from outside the cluster. Without it, use `kubectl port-forward` (see the notes
+# printed after install).
+ingress:
+  enabled: false
+  className: ""
+  host: agenda.example.test
+  annotations: {}
+  # Serves the site over HTTPS with a certificate kept in this secret, and marks the session
+  # cookie as secure.
+  tls: false
+  tlsSecretName: ""
+
+postgresql:
+  # A single PostgreSQL inside the release: enough for a demo. For real use, turn it off and
+  # point `external` to a managed database.
+  enabled: true
+  image: postgres:18-alpine
+  database: agenda
+  username: agenda
+  # Left empty, a random password is generated at install and kept on upgrade.
+  password: ""
+  # Or the name of an existing secret holding the password under the key `password`.
+  existingSecret: ""
+  storage: 1Gi
+  storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  external:
+    host: ""
+    port: 5432
+
+kafka:
+  # A single Kafka node in KRaft mode inside the release. For real use, turn it off and give the
+  # bootstrap servers of an existing cluster.
+  enabled: true
+  image: apache/kafka:4.4.0
+  heap: -Xms384m -Xmx384m
+  storage: 1Gi
+  storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 768Mi
+  external:
+    bootstrapServers: ""
