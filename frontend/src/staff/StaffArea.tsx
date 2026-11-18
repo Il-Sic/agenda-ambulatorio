@@ -4,12 +4,13 @@ import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router';
 import { signOut } from '../api/auth';
 import { messageFor } from '../api/problem';
 import { Button } from '../components/Button';
+import { LogoMark } from '../components/Logo';
 import { Notice } from '../components/Notice';
 import { SkipLink } from '../components/SkipLink';
 import { useCurrentUser } from './useCurrentUser';
 
 const NAV_LINK =
-  'inline-flex min-h-11 items-center underline-offset-8 hover:underline aria-[current=page]:font-bold aria-[current=page]:underline';
+  'inline-flex min-h-10 items-center rounded-lg px-3 underline-offset-8 hover:underline aria-[current=page]:bg-white aria-[current=page]:font-bold aria-[current=page]:text-ink aria-[current=page]:no-underline';
 
 /** Frame of every staff page. Without a session it sends the visitor to sign in. */
 export function StaffArea() {
@@ -39,11 +40,12 @@ export function StaffArea() {
     <div className="flex min-h-dvh flex-col">
       <SkipLink />
       <header className="on-ink bg-ink text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-1 px-4 py-2">
-          <Link to="/segreteria" className="text-lg font-bold">
+        <div className="mx-auto flex max-w-[88rem] flex-wrap items-center justify-between gap-x-8 gap-y-1 px-4 py-2 sm:px-6">
+          <Link to="/segreteria" className="flex items-center gap-3 text-lg font-bold">
+            <LogoMark size={30} />
             Segreteria Valdoria
           </Link>
-          <nav aria-label="Segreteria" className="flex flex-wrap gap-x-6">
+          <nav aria-label="Segreteria" className="flex flex-wrap gap-x-1">
             <NavLink to="/segreteria" end className={NAV_LINK}>
               Agenda
             </NavLink>
@@ -71,7 +73,7 @@ export function StaffArea() {
           )}
         </div>
       </header>
-      <main id="contenuto" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="contenuto" className="mx-auto w-full max-w-[88rem] flex-1 px-4 py-6 sm:px-6">
         {signOutFailure && (
           <div className="mb-6">
             <Notice kind="error">{signOutFailure}</Notice>

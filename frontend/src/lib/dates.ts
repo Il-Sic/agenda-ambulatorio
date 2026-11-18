@@ -69,6 +69,27 @@ export function formatDateTime(instant: string): string {
   return `${formatDayLong(instant)}, ore ${formatTime(instant)}`;
 }
 
+const hourAndMinuteFormat = new Intl.DateTimeFormat('en-GB', {
+  timeZone: ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Minutes since midnight at the clinic: 9:30 is 570. */
+export function minutesOfDay(instant: string | Date): number {
+  const [hours = 0, minutes = 0] = hourAndMinuteFormat
+    .format(new Date(instant))
+    .split(':')
+    .map(Number);
+  return hours * 60 + minutes;
+}
+
+/** "9:30", from minutes since midnight. */
+export function clockTime(minutes: number): string {
+  return `${String(Math.floor(minutes / 60))}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
 /** "9:00": the hour without a leading zero, the way people say it. */
 export function formatSpokenTime(instant: string): string {
   return spokenTimeFormat.format(new Date(instant));
