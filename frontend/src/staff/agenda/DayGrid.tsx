@@ -67,7 +67,7 @@ export function DayGrid({ doctors, range, now, selection, matches, onSelect }: D
         style={{
           gridTemplateColumns: `4.5rem repeat(${String(doctors.length)}, minmax(0, 1fr))`,
           // Narrower than this, the grid scrolls sideways instead of squeezing the names.
-          minWidth: `${String(4.5 + doctors.length * 10.5)}rem`,
+          minWidth: `${String(4.5 + doctors.length * 9)}rem`,
         }}
       >
         <div aria-hidden="true">
@@ -146,8 +146,10 @@ function DoctorColumn({
         className="sticky top-0 z-20 h-[4.75rem] border-t-8 bg-paper px-3 pt-2 leading-snug"
         style={{ borderColor: lineColor(doctor.specialty) }}
       >
+        {/* Title and surname are what fits and what the desk says; the full name is read out. */}
         <h3 id={headingId} className="truncate font-bold">
-          {doctor.name}
+          <span aria-hidden="true">{shortName(doctor.name)}</span>
+          <span className="sr-only">{doctor.name}</span>
         </h3>
         <p className="truncate text-sm text-ink-soft">
           {doctor.specialty}
@@ -230,6 +232,12 @@ function DoctorColumn({
       </div>
     </section>
   );
+}
+
+/** "Dott.ssa Elena Marchetti" becomes "Dott.ssa Marchetti". */
+function shortName(name: string): string {
+  const words = name.split(' ');
+  return words.length > 2 ? `${words[0] ?? ''} ${words.at(-1) ?? ''}` : name;
 }
 
 const BLOCK =
