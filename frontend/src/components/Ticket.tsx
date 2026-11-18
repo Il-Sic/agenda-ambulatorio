@@ -45,7 +45,7 @@ export function Ticket({
   return (
     <section
       aria-label="Tagliando della visita"
-      className="ticket w-[calc(100%-1.5rem)] max-w-[21rem] font-mono"
+      className="ticket print-ticket w-[calc(100%-1.5rem)] max-w-[21rem] font-mono"
     >
       <div className="ticket-body bg-paper px-6 pt-7 pb-5">
         <p className="text-sm text-ink-soft">Poliambulatorio Valdoria</p>

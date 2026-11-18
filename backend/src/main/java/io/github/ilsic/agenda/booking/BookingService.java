@@ -79,6 +79,35 @@ class BookingService {
         specialtyId, firstBookableDay(now), lastBookableDay(now), now);
   }
 
+  /**
+   * Moves a visit to another free slot of the same doctor, in one transaction: there is no moment
+   * in which the patient has no visit, or two. Asking again for the time the visit already has
+   * changes nothing, so a repeated request is harmless.
+   */
+  @Transactional
+  BookingDetails reschedule(String code, String email, Instant startsAt) {
+    Appointment appointment = ownedBy(code, email);
+    DoctorSummary doctor = doctors.get(appointment.doctorId());
+    if (appointment.status() == AppointmentStatus.BOOKED
+        && appointment.slot().startsAt().equals(startsAt)) {
+      return BookingDetails.of(appointment, doctor);
+    }
+    Instant now = clock.instant();
+    Slot slot = offeredSlot(doctor.id(), startsAt, now);
+    appointment.moveTo(slot, now);
+    try {
+      // As for a new booking, the database has the last word on whether the slot is free.
+      appointments.saveAndFlush(appointment);
+    } catch (DataAccessException exception) {
+      if (lostTheRaceForTheSlot(exception)) {
+        throw new SlotNotAvailableException();
+      }
+      throw exception;
+    }
+    events.moved(appointment, doctor);
+    return BookingDetails.of(appointment, doctor);
+  }
+
   /** The booking made earlier with this key, if the request is the same one sent again. */
   @Transactional(readOnly = true)
   Optional<BookingDetails> madeWith(String idempotencyKey, BookingRequest request) {

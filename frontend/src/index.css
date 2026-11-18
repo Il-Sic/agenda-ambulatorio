@@ -293,6 +293,29 @@
   }
 }
 
+/* Printed, the page is the ticket alone, without its shadow. */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-ticket,
+  .print-ticket * {
+    visibility: visible;
+  }
+
+  .print-ticket {
+    position: absolute;
+    top: 0;
+    left: 0;
+    filter: none;
+  }
+}
+
 /* Moving from one booking step to the next is a short cross-fade, where the browser can. */
 ::view-transition-old(root),
 ::view-transition-new(root) {

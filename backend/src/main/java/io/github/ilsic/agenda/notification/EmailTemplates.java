@@ -19,6 +19,7 @@ final class EmailTemplates {
     return switch (message.type()) {
       case "BOOKING_CONFIRMED" -> Optional.of(confirmation(message));
       case "BOOKING_CANCELLED" -> Optional.of(cancellation(message));
+      case "BOOKING_MOVED" -> Optional.of(move(message));
       case "VISIT_REMINDER" -> Optional.of(reminder(message));
       default -> Optional.empty();
     };
@@ -38,7 +39,7 @@ final class EmailTemplates {
         Quando: %s
         Codice di prenotazione: %s
 
-        Per rivedere o annullare la prenotazione usi sul nostro sito il codice e questo indirizzo email.
+        Per rivedere, spostare o annullare la visita usi sul nostro sito il codice e questo indirizzo email.
 
         Poliambulatorio Valdoria
         """
@@ -68,6 +69,31 @@ final class EmailTemplates {
                 message.specialty(),
                 message.doctorName(),
                 WHEN.format(message.startsAt())));
+  }
+
+  private static Email move(BookingMessage message) {
+    return new Email(
+        message.patientEmail(),
+        "Visita spostata - codice " + message.bookingCode(),
+        """
+        Gentile %s,
+
+        la sua visita di %s con %s è stata spostata.
+
+        Nuovo orario: %s
+        Codice di prenotazione: %s (non cambia)
+
+        Il tagliando che ha salvato non vale più per l'orario vecchio: può aprirlo di nuovo sul
+        nostro sito con il codice e questo indirizzo email.
+
+        Poliambulatorio Valdoria
+        """
+            .formatted(
+                message.patientName(),
+                message.specialty(),
+                message.doctorName(),
+                WHEN.format(message.startsAt()),
+                message.bookingCode()));
   }
 
   private static Email reminder(BookingMessage message) {

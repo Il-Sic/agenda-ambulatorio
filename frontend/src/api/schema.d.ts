@@ -72,6 +72,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/{code}/rescheduling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a booking to another free slot of the same doctor
+         * @description Given its code and the e-mail used to book. The visit keeps its code; asking again for the time it already has changes nothing.
+         */
+        post: operations["reschedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/doctors": {
         parameters: {
             query?: never;
@@ -406,6 +426,8 @@ export interface components {
         };
         BookingDetails: {
             code: string;
+            /** Format: int64 */
+            doctorId: number;
             doctorName: string;
             /** Format: date-time */
             endsAt: string;
@@ -503,6 +525,12 @@ export interface components {
             title: string;
             /** @example /problems/slot-not-available */
             type: string;
+        };
+        ReschedulingRequest: {
+            /** Format: email */
+            email: string;
+            /** Format: date-time */
+            startsAt: string;
         };
         Slot: {
             /** Format: date-time */
@@ -660,6 +688,50 @@ export interface operations {
             };
             /** @description Wrong code or wrong e-mail (type /problems/booking-not-found) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reschedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReschedulingRequest"];
+            };
+        };
+        responses: {
+            /** @description The booking at its new time */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetails"];
+                };
+            };
+            /** @description Wrong code or wrong e-mail (type /problems/booking-not-found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The new slot is not offered or was just taken (type /problems/slot-not-available), or the visit is cancelled or already started (type /problems/appointment-state) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
