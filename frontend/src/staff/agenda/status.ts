@@ -6,7 +6,7 @@ export type Status = Visit['status'];
 
 /** What each status is called and how its block looks: never told by colour alone. */
 export const STATUS: Record<Status, { label: string; block: string }> = {
-  BOOKED: { label: 'In attesa', block: 'border-[1.5px] border-ink-soft bg-paper' },
+  BOOKED: { label: 'Atteso', block: 'border-[1.5px] border-ink-soft bg-paper' },
   ARRIVED: { label: 'Arrivato', block: 'bg-ok-soft' },
   NO_SHOW: { label: 'Non presentato', block: 'bg-warn-soft' },
   CANCELLED: { label: 'Annullata', block: 'bg-ground text-ink-soft line-through' },
@@ -20,5 +20,12 @@ export function possibleActions(visit: Visit, today: string, now: Date) {
     arrive: dayHasCome && (visit.status === 'BOOKED' || visit.status === 'NO_SHOW'),
     miss: dayHasCome && (visit.status === 'BOOKED' || visit.status === 'ARRIVED'),
     cancel: visit.status === 'BOOKED' && notStarted,
+    // A number is given and called only on the day of the visit.
+    call: isWaitingWithANumber(visit) && dayKey(visit.startsAt) === today,
   };
+}
+
+/** Arrived and holding a number, whether or not it has been called yet. */
+export function isWaitingWithANumber(visit: Visit): boolean {
+  return visit.status === 'ARRIVED' && visit.callNumber !== null;
 }

@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, expect, test } from 'vitest';
-import { formatDayKeyLong, todayAtTheClinic } from '../lib/dates';
+import { formatDayKeyLong, formatSpokenTime, todayAtTheClinic } from '../lib/dates';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
 import { problem, signedInAs } from '../test/staff';
@@ -22,6 +22,8 @@ function visit(overrides: object = {}) {
     patientName: 'Giulia Bianchi',
     patientEmail: 'giulia.bianchi@example.com',
     patientPhone: '333 5550101',
+    callNumber: null,
+    calledAt: null,
     ...overrides,
   };
 }
@@ -93,13 +95,13 @@ test('draws the day doctor by doctor, with each visit and its status', async () 
   // The column is headed by the surname: the full name does not fit in it.
   expect(within(marchetti).getByText('Marchetti')).toBeVisible();
   expect(within(marchetti).getByRole('button', { name: /Giulia Bianchi/ })).toHaveTextContent(
-    '9:00 Giulia Bianchi In attesa',
+    '9:00 Giulia Bianchi Atteso',
   );
   const ferri = screen.getByRole('region', { name: 'Dott. Luca Ferri' });
   expect(within(ferri).getByRole('button', { name: /Marco Conti/ })).toHaveTextContent(
     '10:00 Marco Conti Arrivato',
   );
-  expect(screen.getByText('2 visite: 1 arrivato, 1 in attesa.')).toBeVisible();
+  expect(screen.getByText('2 visite: 1 arrivato, 1 atteso.')).toBeVisible();
   expect(screen.getByText('Non ricevono in questo giorno: Dott. Andrea Vitale.')).toBeVisible();
   expect(requestedDate).toBe(PAST_DAY);
 });
@@ -128,6 +130,110 @@ test('shows the data of a visit and records that the patient has arrived', async
   expect(await within(panel).findByText('Arrivato')).toBeVisible();
   expect(
     within(panel).getByRole('button', { name: 'Segna non presentato: Giulia Bianchi' }),
+  ).toBeVisible();
+});
+
+test('a patient arriving today gets a number, and the desk is told which', async () => {
+  const today = todayAtTheClinic();
+  const atNine = { startsAt: `${today}T08:00:00Z`, endsAt: `${today}T08:30:00Z` };
+  let arrived = false;
+  server.use(
+    http.get('*/api/v1/staff/day-plan', () =>
+      dayPlan(today, [
+        doctor(today, {
+          appointments: [
+            visit({
+              ...atNine,
+              status: arrived ? 'ARRIVED' : 'BOOKED',
+              callNumber: arrived ? 7 : null,
+            }),
+          ],
+        }),
+      ]),
+    ),
+    http.post('*/api/v1/staff/appointments/1/arrival', () => {
+      arrived = true;
+      return HttpResponse.json(visit({ ...atNine, status: 'ARRIVED', callNumber: 7 }));
+    }),
+  );
+  const { user } = renderApp('/segreteria');
+
+  await user.click(await screen.findByRole('button', { name: /Giulia Bianchi/ }));
+  await user.click(screen.getByRole('button', { name: 'Segna arrivato: Giulia Bianchi' }));
+
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Arrivo registrato: Giulia Bianchi ha il numero 7.',
+  );
+  const panel = screen.getByRole('region', { name: 'Giulia Bianchi' });
+  expect(await within(panel).findByText(', in sala d’attesa')).toBeVisible();
+  expect(
+    within(panel).getByRole('button', { name: 'Chiama in sala: Giulia Bianchi' }),
+  ).toBeVisible();
+});
+
+test('the desk calls whoever waits with a number, and the number goes on the screen', async () => {
+  const today = todayAtTheClinic();
+  const atNine = { startsAt: `${today}T08:00:00Z`, endsAt: `${today}T08:30:00Z` };
+  let calledAt: string | null = null;
+  server.use(
+    http.get('*/api/v1/staff/day-plan', () =>
+      dayPlan(today, [
+        doctor(today, {
+          appointments: [visit({ ...atNine, status: 'ARRIVED', callNumber: 7, calledAt })],
+        }),
+      ]),
+    ),
+    http.post('*/api/v1/staff/appointments/1/call', () => {
+      calledAt = `${today}T08:02:00Z`;
+      return HttpResponse.json(visit({ ...atNine, status: 'ARRIVED', callNumber: 7, calledAt }));
+    }),
+  );
+  const { user } = renderApp('/segreteria');
+
+  const waiting = await screen.findByRole('region', { name: 'In sala d’attesa' });
+  expect(within(waiting).getByRole('listitem')).toHaveTextContent(/Numero 7\s*Giulia Bianchi/);
+  expect(within(waiting).getByRole('link', { name: /Apri lo schermo della sala/ })).toHaveAttribute(
+    'href',
+    '/sala',
+  );
+  await user.click(within(waiting).getByRole('button', { name: 'Chiama in sala: Giulia Bianchi' }));
+
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Numero 7 chiamato: è sullo schermo della sala d’attesa.',
+  );
+  expect(await within(waiting).findByText(/Nessuno da chiamare/)).toBeVisible();
+});
+
+test('a patient already called can be called again from the visit', async () => {
+  const today = todayAtTheClinic();
+  server.use(
+    http.get('*/api/v1/staff/day-plan', () =>
+      dayPlan(today, [
+        doctor(today, {
+          appointments: [
+            visit({
+              startsAt: `${today}T08:00:00Z`,
+              endsAt: `${today}T08:30:00Z`,
+              status: 'ARRIVED',
+              callNumber: 7,
+              calledAt: `${today}T08:02:00Z`,
+            }),
+          ],
+        }),
+      ]),
+    ),
+  );
+  const { user } = renderApp('/segreteria');
+
+  await user.click(await screen.findByRole('button', { name: /Giulia Bianchi/ }));
+
+  const panel = screen.getByRole('region', { name: 'Giulia Bianchi' });
+  // 08:02 UTC is 9:02 in Rome in winter and 10:02 in summer: the test follows the clinic's clock.
+  expect(
+    within(panel).getByText(`, chiamato alle ${formatSpokenTime(`${today}T08:02:00Z`)}`),
+  ).toBeVisible();
+  expect(
+    within(panel).getByRole('button', { name: 'Chiama di nuovo: Giulia Bianchi' }),
   ).toBeVisible();
 });
 

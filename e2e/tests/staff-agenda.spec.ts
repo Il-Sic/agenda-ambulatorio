@@ -22,7 +22,7 @@ test('the staff cancel a visit and the patient is told by e-mail', async ({ page
   await page.goto(`/segreteria?giorno=${clinicDay(booking.startsAt)}`);
   const doctor = page.getByRole('region', { name: 'Dott.ssa Marta Gentile' });
   const visit = doctor.getByRole('button', { name: new RegExp(patient.name) });
-  await expect(visit).toContainText('In attesa');
+  await expect(visit).toContainText('Atteso');
   await expectNoAccessibilityViolations(page);
 
   await visit.click();

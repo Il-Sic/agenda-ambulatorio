@@ -4,7 +4,7 @@ import { formatSpokenTime } from '../../lib/dates';
 import { lineColor } from '../../lib/specialty';
 import { possibleActions, STATUS, type Visit } from './status';
 
-export type Action = 'arrival' | 'no-show' | 'cancellation';
+export type Action = 'arrival' | 'call' | 'no-show' | 'cancellation';
 
 type VisitPanelProps = {
   visit: Visit;
@@ -63,6 +63,17 @@ export function VisitPanel({
       <dl className="mt-4 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 border-t border-rule pt-3 text-sm">
         <dt className="text-ink-soft">Stato</dt>
         <dd className="font-bold">{STATUS[visit.status].label}</dd>
+        {visit.callNumber !== null && (
+          <>
+            <dt className="text-ink-soft">Numero</dt>
+            <dd>
+              <span className="font-bold tabular-nums">{visit.callNumber}</span>
+              {visit.calledAt === null
+                ? ', in sala d’attesa'
+                : `, chiamato alle ${formatSpokenTime(visit.calledAt)}`}
+            </dd>
+          </>
+        )}
         <dt className="text-ink-soft">Telefono</dt>
         <dd>{visit.patientPhone}</dd>
         <dt className="text-ink-soft">Email</dt>
@@ -72,6 +83,15 @@ export function VisitPanel({
       </dl>
 
       <div className="mt-5 flex flex-col gap-2">
+        {can.call && (
+          <CallButton
+            visit={visit}
+            busy={busy}
+            onCall={() => {
+              onAction('call', visit);
+            }}
+          />
+        )}
         {can.arrive && (
           <Button
             disabled={busy}
@@ -142,5 +162,15 @@ export function VisitPanel({
         Chiudi
       </Button>
     </section>
+  );
+}
+
+/** Puts the patient's number on the waiting room screen; once called, calls it again. */
+function CallButton({ visit, busy, onCall }: { visit: Visit; busy: boolean; onCall: () => void }) {
+  const label = visit.calledAt === null ? 'Chiama in sala' : 'Chiama di nuovo';
+  return (
+    <Button disabled={busy} aria-label={`${label}: ${visit.patientName}`} onClick={onCall}>
+      {label}
+    </Button>
   );
 }
