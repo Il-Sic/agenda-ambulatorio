@@ -57,6 +57,28 @@ class FirstFreeSlotsApiTest {
   }
 
   @Test
+  void givesTheEarliestFreeSlotOfEachDoctorOfASpecialty() {
+    long marchetti = data.doctor(cardiology, "Marchetti");
+    data.availability(marchetti, MONDAY, "09:00", "10:00", 30);
+    long ferri = data.doctor(data.specialty("Ortopedia"), "Ferri");
+    data.availability(ferri, WEDNESDAY, "09:00", "10:00", 20);
+
+    assertThat(mvc.get().uri("/api/v1/doctors/first-free-slots?specialtyId={id}", cardiology))
+        .hasStatusOk()
+        .bodyJson()
+        .isLenientlyEqualTo(
+            """
+            [
+              {"specialtyId": %d, "doctorId": %d,
+               "startsAt": "2027-02-16T14:00:00Z", "endsAt": "2027-02-16T14:30:00Z"},
+              {"specialtyId": %d, "doctorId": %d,
+               "startsAt": "2027-02-22T08:00:00Z", "endsAt": "2027-02-22T08:30:00Z"}
+            ]
+            """
+                .formatted(cardiology, rinaldi, cardiology, marchetti));
+  }
+
+  @Test
   void skipsTakenSlotsButNotCancelledOnes() {
     data.appointment(
         rinaldi,

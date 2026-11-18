@@ -76,6 +76,15 @@ class FreeSlotFinder {
            ORDER BY specialty_id, starts_at, doctor_id
           """;
 
+  private static final String FIRST_FREE_SLOT_OF_EACH_DOCTOR =
+      FREE.formatted(
+              "\n   AND wa.doctor_id IN (SELECT id FROM doctor WHERE specialty_id = :specialtyId)")
+          + """
+          SELECT DISTINCT ON (doctor_id) specialty_id, doctor_id, starts_at, ends_at
+            FROM free
+           ORDER BY doctor_id, starts_at
+          """;
+
   private final JdbcClient jdbc;
 
   FreeSlotFinder(JdbcClient jdbc) {
@@ -104,13 +113,32 @@ class FreeSlotFinder {
         .param("to", to)
         .param("zone", ClinicTime.ZONE.getId())
         .param("after", after.atOffset(ZoneOffset.UTC))
-        .query((row, rowNumber) ->
-            new FirstFreeSlot(
-                row.getLong("specialty_id"),
-                row.getLong("doctor_id"),
-                instant(row, "starts_at"),
-                instant(row, "ends_at")))
+        .query(FreeSlotFinder::firstFreeSlot)
         .list();
+  }
+
+  /**
+   * The earliest free slot of each doctor of a specialty between two calendar days (both included).
+   * A doctor with no free slot in the period is left out.
+   */
+  List<FirstFreeSlot> firstOfEachDoctor(
+      long specialtyId, LocalDate from, LocalDate to, Instant after) {
+    return jdbc.sql(FIRST_FREE_SLOT_OF_EACH_DOCTOR)
+        .param("specialtyId", specialtyId)
+        .param("from", from)
+        .param("to", to)
+        .param("zone", ClinicTime.ZONE.getId())
+        .param("after", after.atOffset(ZoneOffset.UTC))
+        .query(FreeSlotFinder::firstFreeSlot)
+        .list();
+  }
+
+  private static FirstFreeSlot firstFreeSlot(ResultSet row, int rowNumber) throws SQLException {
+    return new FirstFreeSlot(
+        row.getLong("specialty_id"),
+        row.getLong("doctor_id"),
+        instant(row, "starts_at"),
+        instant(row, "ends_at"));
   }
 
   private static Instant instant(ResultSet row, String column) throws SQLException {
