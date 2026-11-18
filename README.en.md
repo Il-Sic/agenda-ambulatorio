@@ -11,9 +11,9 @@ Appointment booking for an outpatient clinic: patients book without an account, 
 ![The home page: every specialty is a coloured line that comes down from "Sei qui" (you are here) and bends towards its name, with its doctors and first free slot](docs/screenshots/computer-pagina-iniziale.png)
 
 <p>
-  <img src="docs/screenshots/telefono-1-specialita.png" alt="On a phone: the lines of the specialties with their first free slot" width="240">
-  <img src="docs/screenshots/telefono-2-orari.png" alt="On a phone: the band of the specialty with the steps, days and times, the ticket at the bottom" width="240">
-  <img src="docs/screenshots/telefono-3-conferma.png" alt="On a phone: the printed ticket with booking code and QR code" width="240">
+  <img src="docs/screenshots/telefono-1-specialita.png" alt="On a phone: the lines of the specialties with their first free slot" width="240" align="top">
+  <img src="docs/screenshots/telefono-2-orari.png" alt="On a phone: the band of the specialty with the steps, days and times, the ticket at the bottom" width="240" align="top">
+  <img src="docs/screenshots/telefono-3-conferma.png" alt="On a phone: the printed ticket with booking code and QR code" width="240" align="top">
 </p>
 
 The interface borrows hospital wayfinding: one coloured line per specialty, to follow all the way to the ticket, which prints as you choose. The choices are explained in the [decision on the visual language](docs/adr/0006-wayfinding-as-visual-language.md).

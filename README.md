@@ -11,9 +11,9 @@ Prenotazione delle visite per un poliambulatorio: il paziente prenota senza acco
 ![La pagina iniziale: ogni specialità è una linea colorata che scende da «Sei qui» e piega verso il suo nome, con i medici e il primo posto libero](docs/screenshots/computer-pagina-iniziale.png)
 
 <p>
-  <img src="docs/screenshots/telefono-1-specialita.png" alt="Sul telefono: le linee delle specialità con il primo posto libero" width="240">
-  <img src="docs/screenshots/telefono-2-orari.png" alt="Sul telefono: la fascia della specialità con i passi, giorni e orari, il tagliando in basso" width="240">
-  <img src="docs/screenshots/telefono-3-conferma.png" alt="Sul telefono: il tagliando stampato con codice e codice QR" width="240">
+  <img src="docs/screenshots/telefono-1-specialita.png" alt="Sul telefono: le linee delle specialità con il primo posto libero" width="240" align="top">
+  <img src="docs/screenshots/telefono-2-orari.png" alt="Sul telefono: la fascia della specialità con i passi, giorni e orari, il tagliando in basso" width="240" align="top">
+  <img src="docs/screenshots/telefono-3-conferma.png" alt="Sul telefono: il tagliando stampato con codice e codice QR" width="240" align="top">
 </p>
 
 L'interfaccia prende a prestito la segnaletica degli ospedali: una linea colorata per ogni specialità, da seguire fino al tagliando, che si stampa mentre scegli. Le scelte sono spiegate nella [decisione sul linguaggio visivo](docs/adr/0006-wayfinding-as-visual-language.md).
