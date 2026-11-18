@@ -297,7 +297,9 @@ type ConfirmationProps = {
 function Confirmation({ booking, email, onBookAnother }: ConfirmationProps) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    heading.current?.focus();
+    // The form was further down: the ticket coming out of the slot is at the top of the page.
+    document.documentElement.scrollTop = 0;
+    heading.current?.focus({ preventScroll: true });
   }, []);
 
   return (
