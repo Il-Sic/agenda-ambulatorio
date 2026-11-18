@@ -65,66 +65,6 @@
 }
 
 @layer components {
-  /* The booking path: a line in the colour of the chosen specialty, with one stop per step. */
-  .path {
-    --line: var(--color-line-slate);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .path-step {
-    position: relative;
-    padding: 0 0 1.75rem 3.25rem;
-  }
-
-  .path-step::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0.9375rem;
-    width: 0.375rem;
-    background: var(--line);
-    transition: background-color 300ms ease;
-  }
-
-  .path-step:last-child {
-    padding-bottom: 0;
-  }
-
-  .path-step:last-child::before {
-    bottom: auto;
-    height: 1rem;
-  }
-
-  .path-stop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: grid;
-    width: 2.25rem;
-    height: 2.25rem;
-    place-items: center;
-    border: 0.1875rem solid var(--line);
-    border-radius: 9999px;
-    background: var(--color-paper);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    transition:
-      background-color 300ms ease,
-      border-color 300ms ease;
-  }
-
-  .path-step[data-state='done'] .path-stop {
-    background: var(--line);
-    color: #fff;
-  }
-
-  .path-step[data-state='todo'] {
-    color: var(--color-ink-soft);
-  }
-
   /*
    * The line map on the home page: one line per specialty comes down from "you are here" and
    * bends into its row, like the coloured lines painted on a hospital floor. React sets which
@@ -251,28 +191,57 @@
       16px 8px repeat-x;
   }
 
-  /* The appointment slip: a ticket with a perforated top edge and the specialty's colour. */
-  .slip {
-    --line: var(--color-line-slate);
-    position: relative;
-    border-left: 0.625rem solid var(--line);
-    background: var(--color-paper);
-    padding: 1.75rem 1.25rem 1.5rem;
+  /* Two semicircles cut out of the paper where the stub tears off. */
+  .ticket-body {
+    -webkit-mask:
+      radial-gradient(circle at 0 100%, #0000 11px, #000 11.5px) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 100%, #0000 11px, #000 11.5px) right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(circle at 0 100%, #0000 11px, #000 11.5px) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 100%, #0000 11px, #000 11.5px) right / 51% 100% no-repeat;
   }
 
-  .slip::before {
+  .ticket-stub {
+    -webkit-mask:
+      radial-gradient(circle at 0 0, #0000 11px, #000 11.5px) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 0, #0000 11px, #000 11.5px) right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(circle at 0 0, #0000 11px, #000 11.5px) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 0, #0000 11px, #000 11.5px) right / 51% 100% no-repeat;
+  }
+
+  /* The slot the ticket comes out of, as on the machines in a waiting room. */
+  .dispenser {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    height: 30px;
+    place-items: center;
+    border-radius: 15px;
+    background: var(--color-ink);
+  }
+
+  .dispenser::after {
     content: '';
-    position: absolute;
-    top: -0.375rem;
-    right: 0;
-    left: 0;
-    height: 0.75rem;
-    background: radial-gradient(
-        circle at 0.5rem 0.375rem,
-        var(--color-ground) 0.3125rem,
-        transparent 0.34rem
-      )
-      0 0 / 1rem 0.75rem repeat-x;
+    width: calc(100% - 3.5rem);
+    height: 6px;
+    border-radius: 3px;
+    background: #060f18;
+  }
+
+  /* A line just added to the ticket comes out of the printer, a few dots at a time. */
+  .print-in {
+    animation: print-in 640ms steps(8) both;
+  }
+
+  /* At the end the whole ticket slides out of the slot. */
+  .issue {
+    animation: issue 1100ms cubic-bezier(0.25, 0.8, 0.25, 1) 200ms both;
+  }
+
+  /* A band as wide as the window, out of the page margins. */
+  .full-bleed {
+    margin-inline: calc(50% - 50vw);
   }
 }
 
@@ -303,5 +272,37 @@
   }
   to {
     transform: scale(1);
+  }
+}
+
+@keyframes print-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes issue {
+  from {
+    transform: translateY(-101%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Moving from one booking step to the next is a short cross-fade, where the browser can. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

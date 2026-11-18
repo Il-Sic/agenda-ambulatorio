@@ -11,9 +11,9 @@ export async function bookFirstFreeVisit(
 ): Promise<{ code: string; startsAt: string }> {
   await page.goto('/');
   await page.getByRole('link', { name: specialty }).click();
-  await page.getByRole('button', { name: doctor }).click();
+  await page.getByRole('link', { name: doctor }).click();
   await page
-    .getByRole('button', { name: /^\d{2}:\d{2}$/ })
+    .getByRole('button', { name: /^\d{1,2}:\d{2}$/ })
     .first()
     .click();
   await page.getByLabel('Nome e cognome').fill(patient.name);

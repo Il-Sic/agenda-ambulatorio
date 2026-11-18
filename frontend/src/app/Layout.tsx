@@ -1,16 +1,16 @@
 import { Link, NavLink, Outlet } from 'react-router';
 import { Logo } from '../components/Logo';
 import { SkipLink } from '../components/SkipLink';
-
-/** The width and the side margins every part of the public pages shares. */
-const PAGE = 'mx-auto w-full max-w-[76rem] px-5 sm:px-8 lg:px-14';
+import { PAGE } from './page';
 
 const NAV_LINK =
   'inline-flex min-h-11 items-center underline-offset-[10px] decoration-[3px] hover:underline aria-[current=page]:font-bold aria-[current=page]:underline';
 
 export function Layout() {
   return (
-    <div className="flex min-h-dvh flex-col">
+    // Bands as wide as the window would otherwise add a horizontal scroll where scroll bars
+    // take room.
+    <div className="flex min-h-dvh flex-col overflow-x-clip">
       <SkipLink />
       <header
         className={`${PAGE} flex flex-wrap items-center justify-between gap-x-8 gap-y-1 pt-5 pb-3 sm:pt-7`}

@@ -89,6 +89,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/doctors/first-free-slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Give the first free slot of each doctor of a specialty
+         * @description Looks from now up to 90 days ahead. A doctor with no free slot in that period is left out, and so is everyone for an unknown specialty.
+         */
+        get: operations["firstFreeSlotsOfDoctors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/doctors/{doctorId}/slots": {
         parameters: {
             query?: never;
@@ -632,6 +652,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoctorSummary"][];
+                };
+            };
+        };
+    };
+    firstFreeSlotsOfDoctors: {
+        parameters: {
+            query: {
+                specialtyId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One slot per doctor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirstFreeSlot"][];
                 };
             };
         };

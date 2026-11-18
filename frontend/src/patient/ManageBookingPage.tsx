@@ -4,7 +4,7 @@ import { api, unwrap, type Schemas } from '../api/client';
 import { messageFor } from '../api/problem';
 import { Button } from '../components/Button';
 import { Notice } from '../components/Notice';
-import { Slip } from '../components/Slip';
+import { Ticket } from '../components/Ticket';
 import { formatDateTime } from '../lib/dates';
 import { LookupForm } from './LookupForm';
 import { bookingLookup, type BookingLookup } from './validation';
@@ -31,7 +31,9 @@ export function ManageBookingPage() {
   return (
     <div className="max-w-xl space-y-6">
       <title>La mia prenotazione - Poliambulatorio Valdoria</title>
-      <h1 className="text-3xl font-bold">La mia prenotazione</h1>
+      <h1 className="text-[2.1rem]/tight font-extrabold tracking-[-0.02em] sm:text-5xl/tight">
+        La mia prenotazione
+      </h1>
       {found ? (
         <FoundBooking
           found={found}
@@ -100,7 +102,14 @@ function FoundBooking({ found, onChange, onSearchAgain }: FoundBookingProps) {
         </Notice>
       )}
       {error && <Notice kind="error">{error}</Notice>}
-      <Slip booking={booking} />
+      <Ticket
+        specialty={booking.specialty}
+        doctor={booking.doctorName}
+        startsAt={booking.startsAt}
+        patient={booking.patientName}
+        code={booking.code}
+        status={booking.status}
+      />
       {canCancel && !asking && (
         <Button
           variant="secondary"

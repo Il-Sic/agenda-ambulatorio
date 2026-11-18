@@ -31,6 +31,12 @@ const spokenTimeFormat = new Intl.DateTimeFormat('it-IT', {
   minute: '2-digit',
 });
 const weekdayFormat = new Intl.DateTimeFormat('it-IT', { timeZone: ZONE, weekday: 'long' });
+const cardWeekdayFormat = new Intl.DateTimeFormat('it-IT', { timeZone: 'UTC', weekday: 'short' });
+const cardDateFormat = new Intl.DateTimeFormat('it-IT', {
+  timeZone: 'UTC',
+  day: 'numeric',
+  month: 'short',
+});
 const weekdayAndDateFormat = new Intl.DateTimeFormat('it-IT', {
   timeZone: ZONE,
   weekday: 'long',
@@ -63,13 +69,31 @@ export function formatDateTime(instant: string): string {
   return `${formatDayLong(instant)}, ore ${formatTime(instant)}`;
 }
 
+/** "9:00": the hour without a leading zero, the way people say it. */
+export function formatSpokenTime(instant: string): string {
+  return spokenTimeFormat.format(new Date(instant));
+}
+
+/** "giovedì 19 novembre": the day of a visit, the year being clear from the context. */
+export function formatDay(instant: string): string {
+  return weekdayAndDateFormat.format(new Date(instant));
+}
+
+/** What a day card shows: "oggi" or "mer", then "18 nov". From a YYYY-MM-DD day. */
+export function dayCard(day: string, today: string): { weekday: string; date: string } {
+  const noon = atNoonUtc(day);
+  const weekday =
+    day === today ? 'oggi' : day === addDays(today, 1) ? 'domani' : cardWeekdayFormat.format(noon);
+  return { weekday, date: cardDateFormat.format(noon) };
+}
+
 /**
  * When a visit is, the way a person would say it: "oggi alle 11:30", "domani alle 9:00",
  * "venerdì alle 14:00" within the week, "lunedì 6 dicembre alle 9:00" further on.
  */
 export function formatWhen(instant: string, today: string = todayAtTheClinic()): string {
   const day = dayKey(instant);
-  const time = spokenTimeFormat.format(new Date(instant));
+  const time = formatSpokenTime(instant);
   if (day === today) {
     return `oggi alle ${time}`;
   }

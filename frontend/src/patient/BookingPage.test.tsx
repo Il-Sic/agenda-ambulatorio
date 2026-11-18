@@ -25,6 +25,9 @@ beforeEach(() => {
         { id: 7, name: 'Dott.ssa Elena Marchetti', specialty: 'Cardiologia' },
       ]);
     }),
+    http.get('*/api/v1/doctors/first-free-slots', () =>
+      HttpResponse.json([{ specialtyId: 1, doctorId: 7, startsAt: NINE, endsAt: HALF_PAST_NINE }]),
+    ),
     http.get('*/api/v1/doctors/7/slots', () =>
       HttpResponse.json([
         { startsAt: NINE, endsAt: HALF_PAST_NINE },
@@ -36,8 +39,8 @@ beforeEach(() => {
 
 async function chooseTheNineOClockSlot(user: ReturnType<typeof renderApp>['user']) {
   await user.click(await screen.findByRole('link', { name: 'Cardiologia' }));
-  await user.click(await screen.findByRole('button', { name: 'Dott.ssa Elena Marchetti' }));
-  await user.click(await screen.findByRole('button', { name: '09:00' }));
+  await user.click(await screen.findByRole('link', { name: 'Dott.ssa Elena Marchetti' }));
+  await user.click(await screen.findByRole('button', { name: '9:00' }));
 }
 
 async function fillInTheDetails(user: ReturnType<typeof renderApp>['user']) {
@@ -84,8 +87,9 @@ test('a patient who already booked opens the booking from the home page', async 
   await user.click(screen.getByRole('button', { name: 'Ritrova la prenotazione' }));
 
   expect(await screen.findByRole('heading', { name: 'La mia prenotazione' })).toBeVisible();
-  const slip = await screen.findByRole('region', { name: 'Promemoria della visita' });
-  expect(within(slip).getByText('ABCD2345')).toBeVisible();
+  expect(await screen.findByRole('region', { name: 'Tagliando della visita' })).toHaveTextContent(
+    'ABCD2345',
+  );
   expect(sentEmail).toEqual({ email: 'giulia.bianchi@example.com' });
 });
 
@@ -117,10 +121,11 @@ test('a patient books a visit step by step and gets a booking code', async () =>
   await user.click(screen.getByRole('button', { name: 'Conferma prenotazione' }));
 
   expect(await screen.findByRole('heading', { name: 'Prenotazione confermata' })).toBeVisible();
-  const slip = screen.getByRole('region', { name: 'Promemoria della visita' });
-  expect(within(slip).getByText('ABCD2345')).toBeVisible();
-  expect(within(slip).getByText('Dott.ssa Elena Marchetti')).toBeVisible();
-  expect(within(slip).getByText('lunedì 1 marzo 2027, ore 09:00')).toBeVisible();
+  const ticket = screen.getByRole('region', { name: 'Tagliando della visita' });
+  expect(ticket).toHaveTextContent('ABCD2345');
+  expect(within(ticket).getByText('Dott.ssa Elena Marchetti')).toBeVisible();
+  expect(within(ticket).getByText('lunedì 1 marzo')).toBeVisible();
+  expect(within(ticket).getByText('9:00')).toBeVisible();
   expect(sentBody).toEqual({
     doctorId: 7,
     startsAt: NINE,
@@ -131,19 +136,62 @@ test('a patient books a visit step by step and gets a booking code', async () =>
   expect(csrfHeader).toBe('test-token');
 });
 
-test('the steps already taken stay visible and can be changed', async () => {
+test('the choices made so far stay in view and can be changed', async () => {
   const { user } = renderApp('/');
 
   await chooseTheNineOClockSlot(user);
 
-  const path = screen.getByRole('list', { name: 'Passi della prenotazione' });
-  expect(within(path).getByText('Cardiologia')).toBeVisible();
-  expect(within(path).getByText('Dott.ssa Elena Marchetti')).toBeVisible();
-  expect(within(path).getByText('lunedì 1 marzo 2027, ore 09:00')).toBeVisible();
+  const band = screen.getByRole('region', { name: 'Il tuo percorso' });
+  expect(within(band).getByText('Cardiologia')).toBeVisible();
+  expect(within(band).getByText('Dott.ssa Elena Marchetti')).toBeVisible();
+  const steps = within(band).getByRole('list', { name: 'Passi della prenotazione' });
+  expect(within(steps).getByText('I tuoi dati').closest('li')).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+  const ticket = within(screen.getByRole('complementary', { name: 'Il tuo tagliando' })).getByRole(
+    'region',
+    { name: 'Tagliando della visita' },
+  );
+  expect(within(ticket).getByText('lunedì 1 marzo')).toBeVisible();
+  expect(within(ticket).getByText('9:00')).toBeVisible();
 
-  await user.click(screen.getByRole('button', { name: 'Cambia giorno e ora' }));
+  await user.click(within(steps).getByRole('link', { name: 'Cambia Giorno e ora' }));
 
-  expect(await screen.findByRole('button', { name: '09:30' })).toBeVisible();
+  expect(await screen.findByRole('button', { name: '9:30' })).toBeVisible();
+});
+
+test('the doctors come with the first free slot of each', async () => {
+  const { user } = renderApp('/');
+
+  await user.click(await screen.findByRole('link', { name: 'Cardiologia' }));
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Con quale medico?' })).toBeVisible();
+  await screen.findByText(formatWhen(NINE));
+  expect(
+    screen.getByRole('link', { name: 'Dott.ssa Elena Marchetti' }),
+  ).toHaveAccessibleDescription(`Primo posto libero ${formatWhen(NINE)}`);
+});
+
+test('the times of a day are split into morning and afternoon', async () => {
+  server.use(
+    http.get('*/api/v1/doctors/7/slots', () =>
+      HttpResponse.json([
+        { startsAt: NINE, endsAt: HALF_PAST_NINE },
+        { startsAt: '2027-03-01T14:00:00Z', endsAt: '2027-03-01T14:30:00Z' },
+      ]),
+    ),
+  );
+
+  renderApp('/?specialita=1&medico=7');
+
+  const morning = await screen.findByRole('list', { name: 'Mattina' });
+  expect(within(morning).getByRole('button', { name: '9:00' })).toBeVisible();
+  const afternoon = screen.getByRole('list', { name: 'Pomeriggio' });
+  expect(within(afternoon).getByRole('button', { name: '15:00' })).toBeVisible();
+  expect(
+    screen.getByText('Le visite durano 30 minuti. Gli orari sono quelli di Roma.'),
+  ).toBeVisible();
 });
 
 test('says what is wrong with each field before sending anything', async () => {
@@ -188,7 +236,7 @@ test('when someone else takes the slot first, says so and offers the remaining o
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Questo orario non è più disponibile. Scegline un altro.',
   );
-  expect(await screen.findByRole('button', { name: '09:30' })).toBeVisible();
+  expect(await screen.findByRole('button', { name: '9:30' })).toBeVisible();
 });
 
 test('says so when the doctor has no free slot in the coming days', async () => {
@@ -196,7 +244,7 @@ test('says so when the doctor has no free slot in the coming days', async () => 
   const { user } = renderApp('/');
 
   await user.click(await screen.findByRole('link', { name: 'Cardiologia' }));
-  await user.click(await screen.findByRole('button', { name: 'Dott.ssa Elena Marchetti' }));
+  await user.click(await screen.findByRole('link', { name: 'Dott.ssa Elena Marchetti' }));
 
   expect(await screen.findByText(/Nessun orario libero/)).toBeVisible();
   expect(screen.getByRole('button', { name: 'Giorni successivi' })).toBeVisible();
@@ -215,7 +263,7 @@ test('says so when the list of specialties cannot be loaded', async () => {
 test('nonsense typed into the address bar is ignored instead of breaking the page', async () => {
   renderApp('/?specialita=1&medico=7&dal=abc&orario=nonsense');
 
-  expect(await screen.findByRole('button', { name: '09:00' })).toBeVisible();
+  expect(await screen.findByRole('button', { name: '9:00' })).toBeVisible();
 });
 
 test('does not offer days beyond the ninety the clinic takes bookings for', async () => {

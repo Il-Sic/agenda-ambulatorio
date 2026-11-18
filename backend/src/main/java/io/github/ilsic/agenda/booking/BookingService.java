@@ -71,6 +71,14 @@ class BookingService {
     return freeSlots.firstOfEachSpecialty(firstBookableDay(now), lastBookableDay(now), now);
   }
 
+  /** The earliest free slot of each doctor of a specialty, to the end of the booking horizon. */
+  @Transactional(readOnly = true)
+  List<FirstFreeSlot> firstFreeSlotsOfDoctors(long specialtyId) {
+    Instant now = clock.instant();
+    return freeSlots.firstOfEachDoctor(
+        specialtyId, firstBookableDay(now), lastBookableDay(now), now);
+  }
+
   /** The booking made earlier with this key, if the request is the same one sent again. */
   @Transactional(readOnly = true)
   Optional<BookingDetails> madeWith(String idempotencyKey, BookingRequest request) {
