@@ -37,6 +37,7 @@ When the containers are ready, open <http://localhost:8080>. The first start bui
 | Book a visit by following the line of a specialty | <http://localhost:8080> |
 | View, move or cancel it with code and e-mail; add it to a calendar, print the ticket | "La mia prenotazione" |
 | The day's agenda as a grid, bookings for callers, doctors' hours, closure days, sent e-mails | <http://localhost:8080/segreteria> |
+| The waiting room screen, which calls numbers and never names | <http://localhost:8080/sala> |
 | API documentation | <http://localhost:8080/swagger-ui/index.html> |
 
 Demo credentials for the staff area:
@@ -50,11 +51,15 @@ They only exist in this local demo: they are created by the demo data, which is 
 
 A suggested tour: book a visit, then sign in as `segreteria` and open "Notifiche inviate". The confirmation e-mail you find there travelled through Kafka.
 
+Then the waiting room: open <http://localhost:8080/sala> in another window, mark a patient as arrived in the agenda and press "Chiama" under "In sala d'attesa". The number shows up on the screen within seconds; open that patient's booking on a phone (the code and e-mail are in the visit's details) and the page says "È il tuo turno".
+
 If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The site only answers from your own computer; to open it from a phone on the same network set `APP_BIND=0.0.0.0` in the same file. To start again from the initial data: `docker compose down -v`.
 
 ![Booking on a computer: the band of the specialty with the steps, days and times, the ticket printing beside them](docs/screenshots/computer-prenotazione.png)
 
-![The front desk agenda: one column per doctor, visits at their time, free slots, the line of the present and the next arrivals](docs/screenshots/computer-agenda.png)
+![The front desk agenda: one column per doctor, visits at their time, the patients waiting to be called and the next arrivals](docs/screenshots/computer-agenda.png)
+
+![The waiting room screen: the number called on split-flap tiles as in a station, the room to reach with the line to follow, the calls before; never a name](docs/screenshots/computer-sala.png)
 
 ## What it demonstrates
 
@@ -62,6 +67,8 @@ If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The 
 |---|---|
 | No double booking, guaranteed by the database with an exclusion constraint | [`002-booking.sql`](backend/src/main/resources/db/changelog/changes/002-booking.sql) |
 | The proof: twelve requests at the same instant, one booking | [`ConcurrentBookingTest`](backend/src/test/java/io/github/ilsic/agenda/booking/ConcurrentBookingTest.java) |
+| Call numbers counted per day: different even for arrivals at the same instant, without gaps | [`CallNumbers`](backend/src/main/java/io/github/ilsic/agenda/booking/CallNumbers.java), [`WaitingRoomApiTest`](backend/src/test/java/io/github/ilsic/agenda/booking/WaitingRoomApiTest.java) |
+| A public screen that never shows a name, and a patient's phone that updates by itself | [`WaitingRoomPage`](frontend/src/waiting-room/WaitingRoomPage.tsx), [`turn.ts`](frontend/src/patient/turn.ts) |
 | Booking is safe to retry: the same request sent again with the same idempotency key creates no duplicate | [`IdempotentBooking`](backend/src/main/java/io/github/ilsic/agenda/booking/IdempotentBooking.java), [`BookingIdempotencyTest`](backend/src/test/java/io/github/ilsic/agenda/booking/BookingIdempotencyTest.java) |
 | Free slots computed by a single SQL query, daylight saving time included | [`FreeSlotFinder`](backend/src/main/java/io/github/ilsic/agenda/booking/FreeSlotFinder.java), [`FreeSlotFinderTest`](backend/src/test/java/io/github/ilsic/agenda/booking/FreeSlotFinderTest.java) |
 | Transactional outbox: the event is born in the same transaction as the booking | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
@@ -124,6 +131,7 @@ Every important decision has a page explaining context, decision, consequences a
 | [Session instead of JWT](docs/adr/0004-session-instead-of-jwt.md) | No token readable by JavaScript, immediate sign-out |
 | [Outbox instead of publishing directly](docs/adr/0005-transactional-outbox.md) | No lost events and no events for data that was never saved |
 | [Wayfinding as the visual language](docs/adr/0006-wayfinding-as-visual-language.md) | Coloured lines as structure, the ticket as the only object |
+| [The waiting room calls numbers](docs/adr/0007-waiting-room-calls.md) | Never a name on the screen; numbers without duplicates or gaps; screens that ask every few seconds |
 
 Stack: Java 25, Spring Boot 4.1, PostgreSQL 18, Liquibase, Kafka 4.4 in KRaft mode, React 19, TypeScript, Vite, TanStack Query, React Hook Form with Zod, Tailwind CSS.
 
@@ -133,7 +141,7 @@ Stack: Java 25, Spring Boot 4.1, PostgreSQL 18, Liquibase, Kafka 4.4 in KRaft mo
 |---|---|---|
 | Backend | Database constraints, concurrency, daylight saving time, API, security, outbox and consumer against real PostgreSQL and Kafka (Testcontainers), module boundaries | `cd backend && ./mvnw verify` |
 | Frontend | Every page used the way a person would, against a fake backend | `cd frontend && npm ci && npm test` |
-| End to end | The patient books, the staff cancel, the e-mail arrives; on a computer and on a phone, with accessibility checks | see below |
+| End to end | The patient books, the staff cancel, the e-mail arrives; the desk calls a number and the screen and the phone show it; on a computer and on a phone, with accessibility checks | see below |
 
 The backend needs JDK 25 and a running Docker. The frontend needs Node 24 or 26.
 
@@ -186,6 +194,7 @@ cd ../frontend && npm run api:generate                                   # updat
 - **Outbox without clean-up.** Published rows stay in the table. A periodic job should archive them.
 - **An event that cannot be processed is dropped after ten attempts in quick succession.** That is right for an unreadable message; if the database stays down longer, that e-mail is lost. I would add retries spaced out over time and a topic for messages that cannot be processed.
 - **Single-node Kafka and plain HTTP.** Fine for a demo, not for production.
+- **Screens that ask every few seconds.** The waiting room screen and the patient's phone ask for news every 3 to 5 seconds. With many screens I would move to Server-Sent Events, with the news shared between instances.
 - **Docker Compose only.** To run it on Kubernetes I would add a Helm chart.
 
 ## License
