@@ -57,6 +57,17 @@ class BookingController {
     return bookings.freeSlots(doctorId, from, to);
   }
 
+  @GetMapping("/first-free-slots")
+  @Operation(
+      summary = "Give the first free slot of each specialty",
+      description =
+          "Looks from now up to 90 days ahead, among all the doctors of each specialty."
+              + " A specialty with no free slot in that period is left out.")
+  @ApiResponse(responseCode = "200", description = "One slot per specialty")
+  List<FirstFreeSlot> firstFreeSlots() {
+    return bookings.firstFreeSlots();
+  }
+
   @PostMapping("/bookings")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Book a slot")

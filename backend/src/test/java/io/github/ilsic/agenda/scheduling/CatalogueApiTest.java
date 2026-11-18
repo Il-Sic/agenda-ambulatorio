@@ -34,6 +34,30 @@ class CatalogueApiTest {
   }
 
   @Test
+  void listsTheDoctorsOfEachSpecialtyByTitleAndSurname() {
+    long cardiology = data.specialty("Cardiologia");
+    long paediatrics = data.specialty("Pediatria");
+    data.specialty("Dermatologia");
+    data.doctor(cardiology, "Rinaldi");
+    data.doctor(paediatrics, "Gentile");
+    data.doctor(cardiology, "Marchetti");
+
+    assertThat(mvc.get().uri("/api/v1/specialties"))
+        .hasStatusOk()
+        .bodyJson()
+        .isLenientlyEqualTo(
+            """
+            [
+              {"id": %d, "name": "Cardiologia",
+               "doctors": ["Dott.ssa Marchetti", "Dott.ssa Rinaldi"]},
+              {"name": "Dermatologia", "doctors": []},
+              {"id": %d, "name": "Pediatria", "doctors": ["Dott.ssa Gentile"]}
+            ]
+            """
+                .formatted(cardiology, paediatrics));
+  }
+
+  @Test
   void listsTheDoctorsOfASpecialty() {
     long cardiology = data.specialty("Cardiologia");
     long orthopaedics = data.specialty("Ortopedia");

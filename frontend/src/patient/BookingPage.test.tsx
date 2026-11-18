@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, expect, test } from 'vitest';
-import { addDays, todayAtTheClinic } from '../lib/dates';
+import { addDays, formatWhen, todayAtTheClinic } from '../lib/dates';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
 
@@ -12,9 +12,12 @@ beforeEach(() => {
   server.use(
     http.get('*/api/v1/specialties', () =>
       HttpResponse.json([
-        { id: 1, name: 'Cardiologia' },
-        { id: 2, name: 'Ortopedia' },
+        { id: 1, name: 'Cardiologia', doctors: ['Dott.ssa Marchetti', 'Dott. Rinaldi'] },
+        { id: 2, name: 'Ortopedia', doctors: ['Dott. Ferri'] },
       ]),
+    ),
+    http.get('*/api/v1/first-free-slots', () =>
+      HttpResponse.json([{ specialtyId: 1, doctorId: 7, startsAt: NINE, endsAt: HALF_PAST_NINE }]),
     ),
     http.get('*/api/v1/doctors', ({ request }) => {
       expect(new URL(request.url).searchParams.get('specialtyId')).toBe('1');
@@ -32,7 +35,7 @@ beforeEach(() => {
 });
 
 async function chooseTheNineOClockSlot(user: ReturnType<typeof renderApp>['user']) {
-  await user.click(await screen.findByRole('button', { name: 'Cardiologia' }));
+  await user.click(await screen.findByRole('link', { name: 'Cardiologia' }));
   await user.click(await screen.findByRole('button', { name: 'Dott.ssa Elena Marchetti' }));
   await user.click(await screen.findByRole('button', { name: '09:00' }));
 }
@@ -42,6 +45,49 @@ async function fillInTheDetails(user: ReturnType<typeof renderApp>['user']) {
   await user.type(screen.getByLabelText('Email'), 'giulia.bianchi@example.com');
   await user.type(screen.getByLabelText('Telefono'), '333 1234567');
 }
+
+test('the home page shows each specialty with its doctors and its first free slot', async () => {
+  renderApp('/');
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Segui la linea.' })).toBeVisible();
+  // The first free slots arrive with a request of their own.
+  await screen.findByText(formatWhen(NINE));
+  expect(screen.getByRole('link', { name: 'Cardiologia' })).toHaveAccessibleDescription(
+    `Dott.ssa Marchetti, Dott. Rinaldi Primo posto libero ${formatWhen(NINE)}`,
+  );
+  expect(screen.getByRole('link', { name: 'Ortopedia' })).toHaveAccessibleDescription(
+    'Dott. Ferri Nessun posto libero nei prossimi 90 giorni',
+  );
+  expect(screen.getByText(/^Posti liberi aggiornati alle \d{2}:\d{2}$/)).toBeVisible();
+});
+
+test('a patient who already booked opens the booking from the home page', async () => {
+  let sentEmail: unknown;
+  server.use(
+    http.post('*/api/v1/bookings/ABCD2345/lookup', async ({ request }) => {
+      sentEmail = await request.json();
+      return HttpResponse.json({
+        code: 'ABCD2345',
+        status: 'BOOKED',
+        startsAt: NINE,
+        endsAt: HALF_PAST_NINE,
+        doctorName: 'Dott.ssa Elena Marchetti',
+        specialty: 'Cardiologia',
+        patientName: 'Giulia Bianchi',
+      });
+    }),
+  );
+  const { user } = renderApp('/');
+
+  await user.type(await screen.findByLabelText('Codice di prenotazione'), 'abcd2345');
+  await user.type(screen.getByLabelText('Email'), 'giulia.bianchi@example.com');
+  await user.click(screen.getByRole('button', { name: 'Ritrova la prenotazione' }));
+
+  expect(await screen.findByRole('heading', { name: 'La mia prenotazione' })).toBeVisible();
+  const slip = await screen.findByRole('region', { name: 'Promemoria della visita' });
+  expect(within(slip).getByText('ABCD2345')).toBeVisible();
+  expect(sentEmail).toEqual({ email: 'giulia.bianchi@example.com' });
+});
 
 test('a patient books a visit step by step and gets a booking code', async () => {
   let sentBody: unknown;
@@ -149,7 +195,7 @@ test('says so when the doctor has no free slot in the coming days', async () => 
   server.use(http.get('*/api/v1/doctors/7/slots', () => HttpResponse.json([])));
   const { user } = renderApp('/');
 
-  await user.click(await screen.findByRole('button', { name: 'Cardiologia' }));
+  await user.click(await screen.findByRole('link', { name: 'Cardiologia' }));
   await user.click(await screen.findByRole('button', { name: 'Dott.ssa Elena Marchetti' }));
 
   expect(await screen.findByText(/Nessun orario libero/)).toBeVisible();

@@ -10,7 +10,7 @@ export async function bookFirstFreeVisit(
   patient: Patient,
 ): Promise<{ code: string; startsAt: string }> {
   await page.goto('/');
-  await page.getByRole('button', { name: specialty }).click();
+  await page.getByRole('link', { name: specialty }).click();
   await page.getByRole('button', { name: doctor }).click();
   await page
     .getByRole('button', { name: /^\d{2}:\d{2}$/ })
@@ -47,8 +47,10 @@ export function clinicDay(instant: string | Date): string {
 /** A name nobody else in the database has, so a test can find its own patient. */
 export function uniquePatient(firstName: string, projectName: string): Patient {
   const stamp = `${String(Date.now())}${projectName}`;
+  // Eight digits of the clock repeat only after a day: runs on the same database stay apart.
+  const tag = `${String(Date.now()).slice(-8)}${projectName.slice(0, 1)}`;
   return {
-    name: `${firstName} Prova ${stamp.slice(-9)}`,
+    name: `${firstName} Prova ${tag}`,
     email: `${firstName.toLowerCase()}.${stamp}@example.com`,
   };
 }

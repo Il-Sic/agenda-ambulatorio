@@ -25,6 +25,18 @@ const shortDayFormat = new Intl.DateTimeFormat('it-IT', {
   day: 'numeric',
   month: 'short',
 });
+const spokenTimeFormat = new Intl.DateTimeFormat('it-IT', {
+  timeZone: ZONE,
+  hour: 'numeric',
+  minute: '2-digit',
+});
+const weekdayFormat = new Intl.DateTimeFormat('it-IT', { timeZone: ZONE, weekday: 'long' });
+const weekdayAndDateFormat = new Intl.DateTimeFormat('it-IT', {
+  timeZone: ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
 
 export type Slot = { startsAt: string; endsAt: string };
 
@@ -49,6 +61,25 @@ export function formatDayLong(instant: string): string {
 /** "lunedì 1 marzo 2027, ore 09:00" */
 export function formatDateTime(instant: string): string {
   return `${formatDayLong(instant)}, ore ${formatTime(instant)}`;
+}
+
+/**
+ * When a visit is, the way a person would say it: "oggi alle 11:30", "domani alle 9:00",
+ * "venerdì alle 14:00" within the week, "lunedì 6 dicembre alle 9:00" further on.
+ */
+export function formatWhen(instant: string, today: string = todayAtTheClinic()): string {
+  const day = dayKey(instant);
+  const time = spokenTimeFormat.format(new Date(instant));
+  if (day === today) {
+    return `oggi alle ${time}`;
+  }
+  if (day === addDays(today, 1)) {
+    return `domani alle ${time}`;
+  }
+  const date = new Date(instant);
+  const when =
+    day <= addDays(today, 6) ? weekdayFormat.format(date) : weekdayAndDateFormat.format(date);
+  return `${when} alle ${time}`;
 }
 
 /** "lunedì 1 marzo 2027", from a YYYY-MM-DD day. */

@@ -116,6 +116,7 @@ Ogni decisione importante ha una pagina che spiega contesto, scelta, conseguenze
 | [JPA insieme a SQL nativo](docs/adr/0003-jpa-with-native-sql.md) | JPA per le entità, SQL dove serve la potenza di PostgreSQL |
 | [Sessione invece di JWT](docs/adr/0004-session-instead-of-jwt.md) | Niente token leggibili da JavaScript, uscita immediata |
 | [Outbox invece della pubblicazione diretta](docs/adr/0005-transactional-outbox.md) | Nessun evento perso e nessun evento per dati mai salvati |
+| [La segnaletica come linguaggio visivo](docs/adr/0006-wayfinding-as-visual-language.md) | Linee colorate come struttura, il tagliando come unico oggetto |
 
 Stack: Java 25, Spring Boot 4.1, PostgreSQL 18, Liquibase, Kafka 4.4 in modalità KRaft, React 19, TypeScript, Vite, TanStack Query, React Hook Form con Zod, Tailwind CSS.
 
