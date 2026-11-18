@@ -6,10 +6,13 @@ test('a patient books a visit and finds it again with the code', async ({ page }
   const email = `paola.verdi.${String(Date.now())}.${testInfo.project.name}@example.com`;
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Prenota una visita' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Segui la linea.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ortopedia' })).toHaveAccessibleDescription(
+    /^Dott\.ssa Colonna, Dott\. Ferri Primo posto libero /,
+  );
   await expectNoAccessibilityViolations(page);
 
-  await page.getByRole('button', { name: 'Ortopedia' }).click();
+  await page.getByRole('link', { name: 'Ortopedia' }).click();
   await page.getByRole('button', { name: 'Dott. Luca Ferri' }).click();
 
   const firstFreeTime = page.getByRole('button', { name: /^\d{2}:\d{2}$/ }).first();
@@ -43,7 +46,7 @@ test('a patient books a visit and finds it again with the code', async ({ page }
 
 test('the browser back button undoes the last step', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Cardiologia' }).click();
+  await page.getByRole('link', { name: 'Cardiologia' }).click();
   await page.getByRole('button', { name: 'Dott.ssa Elena Marchetti' }).click();
   await expect(page.getByRole('group', { name: 'Giorno' })).toBeVisible();
 
