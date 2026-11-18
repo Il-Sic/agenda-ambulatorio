@@ -42,6 +42,21 @@ test('a patient books a visit and finds it again with the code', async ({ page }
     'Confermata',
   );
   await expect(page.getByRole('button', { name: 'Annulla prenotazione' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Aggiungi al calendario' })).toHaveAttribute(
+    'download',
+    `visita-${code}.ics`,
+  );
+
+  // Another time with the same doctor: the code stays, the old time is given up only now.
+  await page.getByRole('button', { name: 'Sposta la visita' }).click();
+  await page
+    .getByRole('button', { name: /^\d{1,2}:\d{2}$/ })
+    .last()
+    .click();
+  await page.getByRole('button', { name: 'Sì, sposta la visita' }).click();
+  await expect(page.getByRole('status')).toContainText('Visita spostata');
+  await expect(page.getByRole('region', { name: 'Tagliando della visita' })).toContainText(code);
+  await expectNoAccessibilityViolations(page);
 
   // Anyone with the code, typed in any case, and the e-mail finds it again.
   await page.getByRole('button', { name: 'Cerca un’altra prenotazione' }).click();

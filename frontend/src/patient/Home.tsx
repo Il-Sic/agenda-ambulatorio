@@ -85,7 +85,8 @@ export function Home({ specialties, firstFreeSlots }: HomeProps) {
           Hai già prenotato?
         </h2>
         <p className="mt-2 text-ink-soft">
-          Con il codice di prenotazione e la tua email puoi rivedere o annullare la visita.
+          Con il codice di prenotazione e la tua email puoi rivedere, spostare o annullare la
+          visita.
         </p>
         <div className="ticket mt-5">
           <div aria-hidden="true" className="ticket-torn-top" />

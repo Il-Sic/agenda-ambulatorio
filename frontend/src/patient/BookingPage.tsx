@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { Loadable } from '../components/Loadable';
 import { Notice } from '../components/Notice';
 import { Ticket, TicketDispenser } from '../components/Ticket';
+import { TicketActions } from '../components/TicketActions';
 import { addDays, todayAtTheClinic } from '../lib/dates';
 import { dayOrUndefined, instantOrUndefined, numberOrUndefined } from '../lib/params';
 import { randomKey } from '../lib/randomKey';
@@ -325,7 +326,7 @@ function Confirmation({ booking, email, onBookAnother }: ConfirmationProps) {
         </h1>
         <p className="mt-4 max-w-[34em] text-lg [overflow-wrap:anywhere]">
           Ti abbiamo mandato il codice anche per email{email ? `, a ${email}` : ''}. Con il codice e
-          l’email puoi rivedere o annullare la visita quando vuoi.
+          l’email puoi rivedere, spostare o annullare la visita quando vuoi.
         </p>
         <p className="mt-3 max-w-[34em] text-sm text-ink-soft">
           In questo sito dimostrativo l’email non parte davvero: la segreteria la vede tra le
@@ -343,17 +344,20 @@ function Confirmation({ booking, email, onBookAnother }: ConfirmationProps) {
           />
         </TicketDispenser>
       </div>
-      <div className="flex flex-wrap gap-3 [grid-area:next]">
-        <Link
-          to="/prenotazione"
-          state={email ? { code: booking.code, email } : undefined}
-          className="inline-flex min-h-12 items-center rounded bg-ink px-5 font-bold text-white hover:bg-[#0c1b29]"
-        >
-          Gestisci la prenotazione
-        </Link>
-        <Button variant="secondary" onClick={onBookAnother}>
-          Prenota un’altra visita
-        </Button>
+      <div className="space-y-4 [grid-area:next]">
+        <TicketActions booking={booking} />
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/prenotazione"
+            state={email ? { code: booking.code, email } : undefined}
+            className="inline-flex min-h-11 items-center px-2 font-bold underline underline-offset-4 hover:bg-ground"
+          >
+            Gestisci la prenotazione
+          </Link>
+          <Button variant="quiet" onClick={onBookAnother}>
+            Prenota un’altra visita
+          </Button>
+        </div>
       </div>
     </div>
   );

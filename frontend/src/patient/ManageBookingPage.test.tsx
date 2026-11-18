@@ -9,6 +9,7 @@ const booking = {
   status: 'BOOKED',
   startsAt: '2027-03-01T08:00:00Z',
   endsAt: '2027-03-01T08:30:00Z',
+  doctorId: 7,
   doctorName: 'Dott.ssa Elena Marchetti',
   specialty: 'Cardiologia',
   patientName: 'Giulia Bianchi',
@@ -79,4 +80,40 @@ test('explains what to check when no booking matches', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Non troviamo una prenotazione con questo codice e questa email.',
   );
+});
+
+test('a patient moves the visit to another time with the same doctor', async () => {
+  const later = { startsAt: '2027-03-02T13:30:00Z', endsAt: '2027-03-02T14:00:00Z' };
+  let sent: unknown;
+  server.use(
+    http.post('*/api/v1/bookings/ABCD2345/lookup', () => HttpResponse.json(booking)),
+    http.get('*/api/v1/doctors/7/slots', () => HttpResponse.json([later])),
+    http.post('*/api/v1/bookings/ABCD2345/rescheduling', async ({ request }) => {
+      sent = await request.json();
+      return HttpResponse.json({ ...booking, ...later });
+    }),
+  );
+  const { user } = renderApp('/prenotazione');
+  await lookUp(user);
+
+  await user.click(await screen.findByRole('button', { name: 'Sposta la visita' }));
+  await user.click(await screen.findByRole('button', { name: '14:30' }));
+  await user.click(screen.getByRole('button', { name: 'Sì, sposta la visita' }));
+
+  expect(await screen.findByRole('status')).toHaveTextContent('Visita spostata');
+  const ticket = screen.getByRole('region', { name: 'Tagliando della visita' });
+  expect(within(ticket).getByText('14:30')).toBeVisible();
+  expect(within(ticket).getByText('martedì 2 marzo')).toBeVisible();
+  expect(sent).toEqual({ email: 'giulia.bianchi@example.com', startsAt: later.startsAt });
+});
+
+test('the visit can be added to the calendar of the phone', async () => {
+  server.use(http.post('*/api/v1/bookings/ABCD2345/lookup', () => HttpResponse.json(booking)));
+  const { user } = renderApp('/prenotazione');
+  await lookUp(user);
+
+  const link = await screen.findByRole('link', { name: 'Aggiungi al calendario' });
+
+  expect(link).toHaveAttribute('download', 'visita-ABCD2345.ics');
+  expect(decodeURIComponent(link.getAttribute('href') ?? '')).toContain('DTSTART:20270301T080000Z');
 });
