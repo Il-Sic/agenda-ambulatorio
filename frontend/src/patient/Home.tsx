@@ -179,36 +179,40 @@ function SpecialtyRow({ specialty, row, colours, firstFreeSlot, searching }: Spe
         style={{ '--k': own } as CSSProperties}
       />
       <span aria-hidden="true" className="line-stop pop" />
-      <div className="col-start-2 flex min-w-0 flex-col gap-x-6 gap-y-2 pt-[15px] pb-4 pl-8 sm:flex-row sm:items-start sm:justify-between sm:pt-[25px] sm:pb-5 sm:pl-11">
-        <div className="min-w-0">
-          {/* The link is the name alone, but it covers the whole row, line included. */}
-          <Link
-            to={`?specialita=${String(specialty.id)}`}
-            aria-describedby={`${id}-doctors ${id}-when`}
-            className="block text-[1.625rem]/[1.15] font-extrabold tracking-[-0.015em] decoration-(--line) decoration-[5px] underline-offset-[9px] after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:underline focus-visible:outline-none focus-visible:after:outline-3 focus-visible:after:outline-offset-2 focus-visible:after:outline-ink sm:text-4xl/[1.1]"
-          >
-            {specialty.name}
-          </Link>
-          <p id={`${id}-doctors`} className="mt-1 text-sm text-ink-soft sm:text-base">
-            {specialty.doctors.join(', ')}
+      {/* Name and first free slot side by side only when the row is wide enough for both:
+          the room depends on the column, not on the window. */}
+      <div className="@container col-start-2 min-w-0 pt-[15px] pb-4 pl-8 sm:pt-[25px] sm:pb-5 sm:pl-11">
+        <div className="flex flex-col gap-x-6 gap-y-2 @[28rem]:flex-row @[28rem]:flex-wrap @[28rem]:items-start @[28rem]:justify-between">
+          <div className="min-w-0">
+            {/* The link is the name alone, but it covers the whole row, line included. */}
+            <Link
+              to={`?specialita=${String(specialty.id)}`}
+              aria-describedby={`${id}-doctors ${id}-when`}
+              className="block text-[1.625rem]/[1.15] font-extrabold tracking-[-0.015em] decoration-(--line) decoration-[5px] underline-offset-[9px] after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:underline focus-visible:outline-none focus-visible:after:outline-3 focus-visible:after:outline-offset-2 focus-visible:after:outline-ink sm:text-4xl/[1.1]"
+            >
+              {specialty.name}
+            </Link>
+            <p id={`${id}-doctors`} className="mt-1 text-sm text-ink-soft sm:text-base">
+              {specialty.doctors.join(', ')}
+            </p>
+          </div>
+          <p id={`${id}-when`} className="shrink-0 leading-snug @[28rem]:pt-1 @[28rem]:text-right">
+            {firstFreeSlot ? (
+              <>
+                <span className="block text-sm text-ink-soft">Primo posto libero</span>{' '}
+                <span className="block font-bold @[28rem]:text-xl">
+                  {formatWhen(firstFreeSlot.startsAt, todayAtTheClinic())}
+                </span>
+              </>
+            ) : (
+              !searching && (
+                <span className="text-sm text-ink-soft">
+                  Nessun posto libero nei prossimi 90 giorni
+                </span>
+              )
+            )}
           </p>
         </div>
-        <p id={`${id}-when`} className="shrink-0 leading-snug sm:pt-1 sm:text-right">
-          {firstFreeSlot ? (
-            <>
-              <span className="block text-sm text-ink-soft">Primo posto libero</span>{' '}
-              <span className="block font-bold sm:text-xl">
-                {formatWhen(firstFreeSlot.startsAt, todayAtTheClinic())}
-              </span>
-            </>
-          ) : (
-            !searching && (
-              <span className="text-sm text-ink-soft">
-                Nessun posto libero nei prossimi 90 giorni
-              </span>
-            )
-          )}
-        </p>
       </div>
     </li>
   );

@@ -8,13 +8,17 @@ Appointment booking for an outpatient clinic: patients book without an account, 
 
 > Demonstration project. "Poliambulatorio Valdoria" does not exist: doctors, patients and times are invented and there is no real health data. The user interface is in Italian.
 
-![The booking page: specialty and doctor chosen, free times of the day](docs/screenshots/computer-prenotazione.png)
+![The home page: every specialty is a coloured line that comes down from "Sei qui" (you are here) and bends towards its name, with its doctors and first free slot](docs/screenshots/computer-pagina-iniziale.png)
 
 <p>
-  <img src="docs/screenshots/telefono-1-specialita.png" alt="On a phone: choosing the specialty" width="240">
-  <img src="docs/screenshots/telefono-2-orari.png" alt="On a phone: choosing day and time" width="240">
-  <img src="docs/screenshots/telefono-3-conferma.png" alt="On a phone: confirmation slip with the booking code" width="240">
+  <img src="docs/screenshots/telefono-1-specialita.png" alt="On a phone: the lines of the specialties with their first free slot" width="240" align="top">
+  <img src="docs/screenshots/telefono-2-orari.png" alt="On a phone: the band of the specialty with the steps, days and times, the ticket at the bottom" width="240" align="top">
+  <img src="docs/screenshots/telefono-3-conferma.png" alt="On a phone: the printed ticket with booking code and QR code" width="240" align="top">
 </p>
+
+The interface borrows hospital wayfinding: one coloured line per specialty, to follow all the way to the ticket, which prints as you choose. The choices are explained in the [decision on the visual language](docs/adr/0006-wayfinding-as-visual-language.md).
+
+![The journey in fifteen seconds: the lines are painted, specialty, doctor and time are chosen, and the ticket slides out of the slot with its code](docs/percorso.gif)
 
 ## Try it in a minute
 
@@ -30,9 +34,9 @@ When the containers are ready, open <http://localhost:8080>. The first start bui
 
 | What to try | Where |
 |---|---|
-| Book a visit | <http://localhost:8080> |
-| View or cancel it with code and e-mail | "La mia prenotazione" |
-| Agenda, doctors' hours, closure days, sent e-mails | <http://localhost:8080/segreteria> |
+| Book a visit by following the line of a specialty | <http://localhost:8080> |
+| View, move or cancel it with code and e-mail; add it to a calendar, print the ticket | "La mia prenotazione" |
+| The day's agenda as a grid, bookings for callers, doctors' hours, closure days, sent e-mails | <http://localhost:8080/segreteria> |
 | API documentation | <http://localhost:8080/swagger-ui/index.html> |
 
 Demo credentials for the staff area:
@@ -48,7 +52,9 @@ A suggested tour: book a visit, then sign in as `segreteria` and open "Notifiche
 
 If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The site only answers from your own computer; to open it from a phone on the same network set `APP_BIND=0.0.0.0` in the same file. To start again from the initial data: `docker compose down -v`.
 
-![The agenda of the day as the staff see it](docs/screenshots/computer-agenda.png)
+![Booking on a computer: the band of the specialty with the steps, days and times, the ticket printing beside them](docs/screenshots/computer-prenotazione.png)
+
+![The front desk agenda: one column per doctor, visits at their time, free slots, the line of the present and the next arrivals](docs/screenshots/computer-agenda.png)
 
 ## What it demonstrates
 
@@ -61,12 +67,13 @@ If port 8080 is taken, copy `.env.example` to `.env` and change `APP_PORT`. The 
 | Transactional outbox: the event is born in the same transaction as the booking | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
 | Publishing to Kafka with `FOR UPDATE SKIP LOCKED` | [`OutboxPublisher`](backend/src/main/java/io/github/ilsic/agenda/outbox/OutboxPublisher.java), [`OutboxPublisherTest`](backend/src/test/java/io/github/ilsic/agenda/outbox/OutboxPublisherTest.java) |
 | Idempotent consumer: an event delivered twice produces one e-mail | [`SimulatedEmailSender`](backend/src/main/java/io/github/ilsic/agenda/notification/SimulatedEmailSender.java) |
+| Moving a visit in one transaction: never a moment without a visit, or with two | [`BookingService.reschedule`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java), [`BookingReschedulingApiTest`](backend/src/test/java/io/github/ilsic/agenda/booking/BookingReschedulingApiTest.java) |
 | A reminder the day before the visit, through the same event path as the other e-mails | [`VisitReminders`](backend/src/main/java/io/github/ilsic/agenda/booking/VisitReminders.java), [`VisitRemindersTest`](backend/src/test/java/io/github/ilsic/agenda/booking/VisitRemindersTest.java) |
 | One modular service, with boundaries verified on every build | [`ModularityTest`](backend/src/test/java/io/github/ilsic/agenda/ModularityTest.java) |
 | Session in an HttpOnly cookie, CSRF, two roles, everything else denied | [`SecurityConfiguration`](backend/src/main/java/io/github/ilsic/agenda/identity/SecurityConfiguration.java), [`AccessRulesTest`](backend/src/test/java/io/github/ilsic/agenda/identity/AccessRulesTest.java) |
 | Errors as Problem Details, told apart by a stable `type` | [`BookingExceptionHandler`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingExceptionHandler.java) |
 | API contract always in step: OpenAPI schema → TypeScript types, checked in CI | [`OpenApiSpecTest`](backend/src/test/java/io/github/ilsic/agenda/OpenApiSpecTest.java), [`client.ts`](frontend/src/api/client.ts) |
-| Phone-first, accessible interface, with axe on every screen | [`BookingPage`](frontend/src/patient/BookingPage.tsx), [`accessibility.ts`](e2e/tests/accessibility.ts) |
+| Phone-first, accessible interface, with axe on every screen | [`Home`](frontend/src/patient/Home.tsx), [`DayGrid`](frontend/src/staff/agenda/DayGrid.tsx), [`accessibility.ts`](e2e/tests/accessibility.ts) |
 | End-to-end tests through the whole stack, Kafka included | [`staff-agenda.spec.ts`](e2e/tests/staff-agenda.spec.ts) |
 
 ## Architecture

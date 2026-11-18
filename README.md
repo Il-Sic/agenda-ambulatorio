@@ -8,13 +8,17 @@ Prenotazione delle visite per un poliambulatorio: il paziente prenota senza acco
 
 > Progetto dimostrativo. Il «Poliambulatorio Valdoria» non esiste: medici, pazienti e orari sono inventati e non c'è alcun dato sanitario reale.
 
-![La pagina di prenotazione: specialità e medico scelti, orari liberi del giorno](docs/screenshots/computer-prenotazione.png)
+![La pagina iniziale: ogni specialità è una linea colorata che scende da «Sei qui» e piega verso il suo nome, con i medici e il primo posto libero](docs/screenshots/computer-pagina-iniziale.png)
 
 <p>
-  <img src="docs/screenshots/telefono-1-specialita.png" alt="Sul telefono: scelta della specialità" width="240">
-  <img src="docs/screenshots/telefono-2-orari.png" alt="Sul telefono: scelta del giorno e dell'ora" width="240">
-  <img src="docs/screenshots/telefono-3-conferma.png" alt="Sul telefono: tagliando di conferma con il codice" width="240">
+  <img src="docs/screenshots/telefono-1-specialita.png" alt="Sul telefono: le linee delle specialità con il primo posto libero" width="240" align="top">
+  <img src="docs/screenshots/telefono-2-orari.png" alt="Sul telefono: la fascia della specialità con i passi, giorni e orari, il tagliando in basso" width="240" align="top">
+  <img src="docs/screenshots/telefono-3-conferma.png" alt="Sul telefono: il tagliando stampato con codice e codice QR" width="240" align="top">
 </p>
+
+L'interfaccia prende a prestito la segnaletica degli ospedali: una linea colorata per ogni specialità, da seguire fino al tagliando, che si stampa mentre scegli. Le scelte sono spiegate nella [decisione sul linguaggio visivo](docs/adr/0006-wayfinding-as-visual-language.md).
+
+![Il percorso in quindici secondi: le linee si disegnano, si sceglie la specialità, il medico e l'ora, e il tagliando esce dalla fessura con il codice](docs/percorso.gif)
 
 ## Provalo in un minuto
 
@@ -30,9 +34,9 @@ Quando i container sono pronti apri <http://localhost:8080>. Il primo avvio comp
 
 | Cosa provare | Dove |
 |---|---|
-| Prenotare una visita | <http://localhost:8080> |
-| Rivedere o annullare con codice ed email | «La mia prenotazione» |
-| Agenda, orari, chiusure, email inviate | <http://localhost:8080/segreteria> |
+| Prenotare una visita seguendo la linea della specialità | <http://localhost:8080> |
+| Rivedere, spostare o annullare con codice ed email; aggiungere la visita al calendario, stampare il tagliando | «La mia prenotazione» |
+| Agenda del giorno a griglia, prenotazioni per chi telefona, orari, chiusure, email inviate | <http://localhost:8080/segreteria> |
 | Documentazione dell'API | <http://localhost:8080/swagger-ui/index.html> |
 
 Credenziali di esempio per l'area segreteria:
@@ -48,7 +52,9 @@ Un giro consigliato: prenota una visita, poi entra come `segreteria` e apri «No
 
 Se la porta 8080 è occupata, copia `.env.example` in `.env` e cambia `APP_PORT`. Il sito risponde solo dal tuo computer; per aprirlo da un telefono sulla stessa rete imposta `APP_BIND=0.0.0.0` nello stesso file. Per ripartire dai dati iniziali: `docker compose down -v`.
 
-![L'agenda del giorno vista dalla segreteria](docs/screenshots/computer-agenda.png)
+![La prenotazione da computer: la fascia della specialità con i passi, giorni e orari, il tagliando che si stampa accanto](docs/screenshots/computer-prenotazione.png)
+
+![L'agenda della segreteria: una colonna per medico, le visite al loro orario, i posti liberi, la linea dell'ora attuale e i prossimi arrivi](docs/screenshots/computer-agenda.png)
 
 ## Cosa dimostra
 
@@ -61,12 +67,13 @@ Se la porta 8080 è occupata, copia `.env.example` in `.env` e cambia `APP_PORT`
 | Outbox transazionale: l'evento nasce nella stessa transazione della prenotazione | [`Outbox`](backend/src/main/java/io/github/ilsic/agenda/outbox/Outbox.java), [`BookingService`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java) |
 | Pubblicazione su Kafka con `FOR UPDATE SKIP LOCKED` | [`OutboxPublisher`](backend/src/main/java/io/github/ilsic/agenda/outbox/OutboxPublisher.java), [`OutboxPublisherTest`](backend/src/test/java/io/github/ilsic/agenda/outbox/OutboxPublisherTest.java) |
 | Consumer idempotente: un evento consegnato due volte produce una sola email | [`SimulatedEmailSender`](backend/src/main/java/io/github/ilsic/agenda/notification/SimulatedEmailSender.java) |
+| Spostare una visita in una sola transazione: mai un momento senza visita, o con due | [`BookingService.reschedule`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingService.java), [`BookingReschedulingApiTest`](backend/src/test/java/io/github/ilsic/agenda/booking/BookingReschedulingApiTest.java) |
 | Promemoria il giorno prima della visita, con lo stesso percorso a eventi delle altre email | [`VisitReminders`](backend/src/main/java/io/github/ilsic/agenda/booking/VisitReminders.java), [`VisitRemindersTest`](backend/src/test/java/io/github/ilsic/agenda/booking/VisitRemindersTest.java) |
 | Un solo servizio a moduli, con i confini verificati a ogni build | [`ModularityTest`](backend/src/test/java/io/github/ilsic/agenda/ModularityTest.java) |
 | Sessione su cookie HttpOnly, CSRF, due ruoli, tutto il resto negato | [`SecurityConfiguration`](backend/src/main/java/io/github/ilsic/agenda/identity/SecurityConfiguration.java), [`AccessRulesTest`](backend/src/test/java/io/github/ilsic/agenda/identity/AccessRulesTest.java) |
 | Errori in formato Problem Details, distinti da un `type` stabile | [`BookingExceptionHandler`](backend/src/main/java/io/github/ilsic/agenda/booking/BookingExceptionHandler.java) |
 | Contratto dell'API sempre allineato: schema OpenAPI → tipi TypeScript, controllati in CI | [`OpenApiSpecTest`](backend/src/test/java/io/github/ilsic/agenda/OpenApiSpecTest.java), [`client.ts`](frontend/src/api/client.ts) |
-| Interfaccia pensata per il telefono e accessibile, con axe a ogni schermata | [`BookingPage`](frontend/src/patient/BookingPage.tsx), [`accessibility.ts`](e2e/tests/accessibility.ts) |
+| Interfaccia pensata per il telefono e accessibile, con axe a ogni schermata | [`Home`](frontend/src/patient/Home.tsx), [`DayGrid`](frontend/src/staff/agenda/DayGrid.tsx), [`accessibility.ts`](e2e/tests/accessibility.ts) |
 | Test end to end attraverso tutto lo stack, Kafka compreso | [`staff-agenda.spec.ts`](e2e/tests/staff-agenda.spec.ts) |
 
 ## Architettura
