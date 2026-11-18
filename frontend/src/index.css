@@ -125,6 +125,132 @@
     color: var(--color-ink-soft);
   }
 
+  /*
+   * The line map on the home page: one line per specialty comes down from "you are here" and
+   * bends into its row, like the coloured lines painted on a hospital floor. React sets which
+   * line an element draws (--k, counted from the left) and its colour (--line); the geometry is
+   * here. Pixels, not rem: a line must land on whole pixels to stay crisp.
+   */
+  .line-map {
+    --lw: 8px; /* line width */
+    --ls: 12px; /* from one line to the next */
+    --lx0: 14px; /* left edge of the first line */
+    --tail: 10px; /* room to bend */
+    --gutter: calc(var(--lx0) + (var(--n) - 1) * var(--ls) + var(--lw) + var(--tail));
+    --stop: 22px;
+    --stop-ring: 6px;
+    --stop-x: calc(var(--gutter) + 12px);
+    --stop-y: 31px;
+    --bend: 22px;
+    --origin-h: 28px;
+  }
+
+  @media (width >= 40rem) {
+    .line-map {
+      --lw: 12px;
+      --ls: 20px;
+      --lx0: 40px;
+      --tail: 36px;
+      --stop: 28px;
+      --stop-ring: 7px;
+      --stop-x: calc(var(--gutter) + 14px);
+      --stop-y: 46px;
+      --bend: 30px;
+      --origin-h: 36px;
+    }
+  }
+
+  .line-map-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr);
+  }
+
+  /* Drawings only: a click on a line goes through to the row's link. */
+  .line-map :is(.line, .line-origin, .line-bend, .line-stop) {
+    pointer-events: none;
+  }
+
+  /* Each row draws its own piece of every line: a pixel of overlap hides the seams. */
+  .line {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: calc(var(--lx0) + var(--k) * var(--ls));
+    width: var(--lw);
+    background: var(--line);
+  }
+
+  .line-origin {
+    position: absolute;
+    top: 0.25rem;
+    left: calc(var(--lx0) - 6px);
+    display: grid;
+    width: calc((var(--n) - 1) * var(--ls) + var(--lw) + 12px);
+    height: var(--origin-h);
+    place-items: center;
+    border-radius: 0.5rem;
+    background: var(--color-ink);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .line-origin ~ .line {
+    top: calc(0.25rem + var(--origin-h));
+  }
+
+  .line-bend {
+    position: absolute;
+    top: -1px;
+    left: calc(var(--lx0) + var(--k) * var(--ls));
+    box-sizing: border-box;
+    width: calc(var(--stop-x) - var(--lx0) - var(--k) * var(--ls));
+    height: calc(var(--stop-y) + var(--lw) / 2 + 1px);
+    border-bottom: var(--lw) solid var(--line);
+    border-left: var(--lw) solid var(--line);
+    border-bottom-left-radius: var(--bend);
+  }
+
+  .line-stop {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--stop-y) - var(--stop) / 2);
+    left: calc(var(--stop-x) - var(--stop) / 2);
+    box-sizing: border-box;
+    width: var(--stop);
+    height: var(--stop);
+    border: var(--stop-ring) solid var(--line);
+    border-radius: 9999px;
+    background: var(--color-paper);
+  }
+
+  /* The one moment of motion on the home page: the lines are painted, row after row. */
+  .paint {
+    animation: paint-down 380ms cubic-bezier(0.3, 0.6, 0.4, 1) var(--delay, 0ms) both;
+  }
+
+  .paint-bend {
+    animation: paint-bend 420ms cubic-bezier(0.3, 0.6, 0.4, 1) var(--delay, 0ms) both;
+  }
+
+  .pop {
+    animation: pop 260ms cubic-bezier(0.3, 1.5, 0.5, 1) calc(var(--delay, 0ms) + 340ms) both;
+  }
+
+  /* The ticket is the only object on the page, so the only thing that casts a shadow. */
+  .ticket {
+    filter: drop-shadow(0 1px 1px rgb(20 41 61 / 0.12))
+      drop-shadow(0 18px 22px rgb(20 41 61 / 0.16));
+  }
+
+  /* The edge left when the ticket is torn off the roll. */
+  .ticket-torn-top {
+    height: 8px;
+    background: conic-gradient(from 135deg at 50% 0, var(--color-paper) 90deg, transparent 0) 0 0 /
+      16px 8px repeat-x;
+  }
+
   /* The appointment slip: a ticket with a perforated top edge and the specialty's colour. */
   .slip {
     --line: var(--color-line-slate);
@@ -147,5 +273,35 @@
         transparent 0.34rem
       )
       0 0 / 1rem 0.75rem repeat-x;
+  }
+}
+
+@keyframes paint-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes paint-bend {
+  from {
+    clip-path: inset(0 calc(100% - var(--lw)) 100% 0);
+  }
+  60% {
+    clip-path: inset(0 calc(100% - var(--lw)) 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
   }
 }

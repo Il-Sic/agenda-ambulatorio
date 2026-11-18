@@ -5,6 +5,7 @@ import {
   formatDayLong,
   formatDayShort,
   formatTime,
+  formatWhen,
   groupSlotsByDay,
   todayAtTheClinic,
 } from './dates';
@@ -23,6 +24,14 @@ describe('clinic dates', () => {
   test('days are written out in Italian', () => {
     expect(formatDayLong('2027-03-01T08:00:00Z')).toBe('lunedì 1 marzo 2027');
     expect(formatDayShort('2027-03-01')).toBe('lun 1 mar');
+  });
+
+  test('a visit soon is said the way a person would say it', () => {
+    const monday = '2027-03-01';
+    expect(formatWhen('2027-03-01T10:30:00Z', monday)).toBe('oggi alle 11:30');
+    expect(formatWhen('2027-03-02T08:00:00Z', monday)).toBe('domani alle 9:00');
+    expect(formatWhen('2027-03-05T13:00:00Z', monday)).toBe('venerdì alle 14:00');
+    expect(formatWhen('2027-03-08T08:00:00Z', monday)).toBe('lunedì 8 marzo alle 9:00');
   });
 
   test('today is the day it is at the clinic', () => {

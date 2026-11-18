@@ -1,13 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useLocation } from 'react-router';
 import { api, unwrap, type Schemas } from '../api/client';
 import { messageFor } from '../api/problem';
 import { Button } from '../components/Button';
-import { Field } from '../components/Field';
 import { Notice } from '../components/Notice';
 import { Slip } from '../components/Slip';
 import { formatDateTime } from '../lib/dates';
+import { LookupForm } from './LookupForm';
 import { bookingLookup, type BookingLookup } from './validation';
 
 type Found = { booking: Schemas['BookingDetails']; email: string };
@@ -15,6 +14,19 @@ type Found = { booking: Schemas['BookingDetails']; email: string };
 /** A patient has no account: the booking code plus the e-mail used to book open the booking. */
 export function ManageBookingPage() {
   const [found, setFound] = useState<Found>();
+  // Typed on the home page, which sends the patient here to see the booking.
+  const location = useLocation();
+  const [typedElsewhere, setTypedElsewhere] = useState(() => lookupIn(location.state));
+
+  async function lookUp({ code, email }: BookingLookup) {
+    const booking = await unwrap(
+      api.POST('/api/v1/bookings/{code}/lookup', {
+        params: { path: { code } },
+        body: { email },
+      }),
+    );
+    setFound({ booking, email });
+  }
 
   return (
     <div className="max-w-xl space-y-6">
@@ -28,63 +40,22 @@ export function ManageBookingPage() {
           }}
           onSearchAgain={() => {
             setFound(undefined);
+            setTypedElsewhere(undefined);
           }}
         />
       ) : (
-        <LookupForm onFound={setFound} />
+        <>
+          <p>Scrivi il codice che hai ricevuto e l’email con cui hai prenotato.</p>
+          <LookupForm submitLabel="Cerca prenotazione" initial={typedElsewhere} onSubmit={lookUp} />
+        </>
       )}
     </div>
   );
 }
 
-function LookupForm({ onFound }: { onFound: (found: Found) => void }) {
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(bookingLookup), defaultValues: { code: '', email: '' } });
-
-  const submit = handleSubmit(async ({ code, email }: BookingLookup) => {
-    try {
-      const booking = await unwrap(
-        api.POST('/api/v1/bookings/{code}/lookup', {
-          params: { path: { code } },
-          body: { email },
-        }),
-      );
-      onFound({ booking, email });
-    } catch (error) {
-      setError('root', { message: messageFor(error) });
-    }
-  });
-
-  return (
-    <form onSubmit={(event) => void submit(event)} noValidate className="space-y-4">
-      <p>Scrivi il codice che hai ricevuto e l’email con cui hai prenotato.</p>
-      {errors.root?.message && <Notice kind="error">{errors.root.message}</Notice>}
-      <Field
-        label="Codice di prenotazione"
-        hint="Otto caratteri, per esempio ABCD2345."
-        autoComplete="off"
-        autoCapitalize="characters"
-        spellCheck={false}
-        error={errors.code?.message}
-        {...register('code')}
-      />
-      <Field
-        label="Email"
-        type="email"
-        autoComplete="email"
-        inputMode="email"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Ricerca in corso…' : 'Cerca prenotazione'}
-      </Button>
-    </form>
-  );
+function lookupIn(state: unknown): BookingLookup | undefined {
+  const parsed = bookingLookup.safeParse(state);
+  return parsed.success ? parsed.data : undefined;
 }
 
 type FoundBookingProps = {

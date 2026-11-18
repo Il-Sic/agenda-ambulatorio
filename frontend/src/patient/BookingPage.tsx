@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router';
 import { api, unwrap, type Schemas } from '../api/client';
 import { isProblem, messageFor } from '../api/problem';
 import { Button } from '../components/Button';
+import { Loadable } from '../components/Loadable';
 import { Notice } from '../components/Notice';
 import { Slip } from '../components/Slip';
 import { addDays, formatDateTime, todayAtTheClinic } from '../lib/dates';
@@ -12,6 +13,7 @@ import { randomKey } from '../lib/randomKey';
 import { lineColor } from '../lib/specialty';
 import { ChoiceList } from './ChoiceList';
 import { DetailsStep } from './DetailsStep';
+import { Home } from './Home';
 import { Path, Step } from './Path';
 import { SlotStep } from './SlotStep';
 import { stepHeadingId } from './stepHeading';
@@ -60,9 +62,17 @@ export function BookingPage() {
       ),
   });
 
+  const step = specialtyId === undefined ? 1 : doctorId === undefined ? 2 : startsAt ? 4 : 3;
+  // Asked again every minute while the page is open: the home page says how fresh it is.
+  const firstFreeSlots = useQuery({
+    queryKey: ['first-free-slots'],
+    enabled: step === 1,
+    refetchInterval: 60_000,
+    queryFn: () => unwrap(api.GET('/api/v1/first-free-slots')),
+  });
+
   const specialty = specialties.data?.find((candidate) => candidate.id === specialtyId);
   const doctor = doctors.data?.find((candidate) => candidate.id === doctorId);
-  const step = specialtyId === undefined ? 1 : doctorId === undefined ? 2 : startsAt ? 4 : 3;
 
   // When the step changes, focus follows it, so keyboard and screen reader users are not left
   // behind at a button that no longer exists.
@@ -113,6 +123,7 @@ export function BookingPage() {
       goTo({ specialita: specialtyId, medico: doctorId });
     } finally {
       void queryClient.invalidateQueries({ queryKey: ['slots'] });
+      void queryClient.invalidateQueries({ queryKey: ['first-free-slots'] });
     }
   }
 
@@ -129,6 +140,10 @@ export function BookingPage() {
     );
   }
 
+  if (step === 1) {
+    return <Home specialties={specialties} firstFreeSlots={firstFreeSlots} />;
+  }
+
   return (
     <div className="max-w-2xl">
       <title>Prenota una visita - Poliambulatorio Valdoria</title>
@@ -141,24 +156,13 @@ export function BookingPage() {
         <Step
           number={1}
           title="Specialità"
-          state={step === 1 ? 'current' : 'done'}
+          state="done"
           summary={specialty?.name}
           editLabel="Cambia specialità"
           onEdit={() => {
             goTo({});
           }}
-        >
-          <Loadable query={specialties} loading="Carico le specialità…">
-            {(list) => (
-              <ChoiceList
-                choices={list.map(({ id, name }) => ({ id, label: name, line: lineColor(name) }))}
-                onChoose={(id) => {
-                  goTo({ specialita: id });
-                }}
-              />
-            )}
-          </Loadable>
-        </Step>
+        />
 
         <Step
           number={2}
@@ -244,30 +248,6 @@ export function BookingPage() {
       </Path>
     </div>
   );
-}
-
-type LoadableProps<T> = {
-  query: { data: T | undefined; error: unknown; isPending: boolean; refetch: () => unknown };
-  loading: string;
-  children: (data: T) => React.ReactNode;
-};
-
-/** The three faces of a request: waiting, failed (with a way to retry), done. */
-function Loadable<T>({ query, loading, children }: LoadableProps<T>) {
-  if (query.data !== undefined) {
-    return children(query.data);
-  }
-  if (query.error) {
-    return (
-      <div className="space-y-3">
-        <Notice kind="error">{messageFor(query.error)}</Notice>
-        <Button variant="secondary" onClick={() => void query.refetch()}>
-          Riprova
-        </Button>
-      </div>
-    );
-  }
-  return query.isPending ? <p className="text-ink-soft">{loading}</p> : null;
 }
 
 type ConfirmationProps = {
