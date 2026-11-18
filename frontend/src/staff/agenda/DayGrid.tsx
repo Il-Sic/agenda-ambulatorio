@@ -11,6 +11,9 @@ type Slot = Schemas['Slot'];
 /** Half an hour is 60 pixels: a 20-minute visit still has room for a name. */
 const PIXELS_PER_MINUTE = 2;
 
+/** The heads of the columns, and the corner above the hours, are as tall as three lines. */
+const HEAD = 'sticky top-0 z-20 h-[5.25rem] bg-paper';
+
 export type Range = { start: number; end: number };
 
 export type Selection =
@@ -41,6 +44,8 @@ export function DayGrid({ doctors, range, now, selection, matches, onSelect }: D
     halfHours.push(minute);
   }
   const nowShown = now !== undefined && now >= range.start && now <= range.end;
+  // The present has a label of its own: the hour it would half cover is left out.
+  const underNow = (minute: number) => nowShown && now > minute - 5 && now < minute + 16;
 
   // Opening today, the grid starts at the present, as a wall calendar at the desk would.
   // Only once: afterwards the scroll belongs to whoever is using the grid.
@@ -71,17 +76,19 @@ export function DayGrid({ doctors, range, now, selection, matches, onSelect }: D
         }}
       >
         <div aria-hidden="true">
-          <div className="sticky top-0 z-20 h-[4.75rem] bg-paper" />
+          <div className={HEAD} />
           <div className="relative border-t border-rule" style={{ height }}>
-            {halfHours.map((minute) => (
-              <span
-                key={minute}
-                className={`absolute right-2.5 text-sm text-ink-soft tabular-nums ${minute % 60 === 0 ? 'font-bold' : ''}`}
-                style={{ top: (minute - range.start) * PIXELS_PER_MINUTE + 3 }}
-              >
-                {clockTime(minute)}
-              </span>
-            ))}
+            {halfHours
+              .filter((minute) => !underNow(minute))
+              .map((minute) => (
+                <span
+                  key={minute}
+                  className={`absolute right-2.5 text-sm text-ink-soft tabular-nums ${minute % 60 === 0 ? 'font-bold' : ''}`}
+                  style={{ top: (minute - range.start) * PIXELS_PER_MINUTE + 3 }}
+                >
+                  {clockTime(minute)}
+                </span>
+              ))}
             {nowShown && (
               <span
                 className="absolute right-1.5 z-10 rounded-md bg-ink px-1.5 text-xs leading-[22px] font-bold text-white tabular-nums"
@@ -143,18 +150,20 @@ function DoctorColumn({
   return (
     <section aria-labelledby={headingId} className="min-w-0 border-l border-rule">
       <div
-        className="sticky top-0 z-20 h-[4.75rem] border-t-8 bg-paper px-3 pt-2 leading-snug"
+        className={`${HEAD} border-t-8 px-3 pt-2 leading-snug`}
         style={{ borderColor: lineColor(doctor.specialty) }}
       >
-        {/* Title and surname are what fits and what the desk says; the full name is read out. */}
+        {/* The surname is what fits and what the desk says; the full name is read out. */}
         <h3 id={headingId} className="truncate font-bold">
-          <span aria-hidden="true">{shortName(doctor.name)}</span>
+          <span aria-hidden="true">{doctor.lastName}</span>
           <span className="sr-only">{doctor.name}</span>
         </h3>
-        <p className="truncate text-sm text-ink-soft">
-          {doctor.specialty}
-          {free > 0 && `, ${free === 1 ? '1 libero' : `${String(free)} liberi`}`}
-        </p>
+        <p className="truncate text-sm text-ink-soft">{doctor.specialty}</p>
+        {free > 0 && (
+          <p className="truncate text-sm text-ink-soft">
+            {free === 1 ? '1 posto libero' : `${String(free)} posti liberi`}
+          </p>
+        )}
       </div>
       <div className="relative border-t border-rule" style={{ height }}>
         <div
@@ -203,7 +212,7 @@ function DoctorColumn({
                 {item.visit ? (
                   <VisitBlock
                     visit={item.visit}
-                    tall={blockHeight >= 52}
+                    size={blockSize(blockHeight)}
                     selected={selection?.kind === 'visit' && selection.code === item.visit.code}
                     dimmed={matches !== undefined && !matches.has(item.visit.code)}
                     onSelect={() => {
@@ -234,10 +243,17 @@ function DoctorColumn({
   );
 }
 
-/** "Dott.ssa Elena Marchetti" becomes "Dott.ssa Marchetti". */
-function shortName(name: string): string {
-  const words = name.split(' ');
-  return words.length > 2 ? `${words[0] ?? ''} ${words.at(-1) ?? ''}` : name;
+type BlockSize = 'line' | 'two-lines' | 'three-lines';
+
+/**
+ * What a visit block has room for. From twenty minutes up the name gets a line of its own, under
+ * the time; from about half an hour the status is written out too. Shorter visits keep to one line.
+ */
+function blockSize(height: number): BlockSize {
+  if (height >= 52) {
+    return 'three-lines';
+  }
+  return height >= 38 ? 'two-lines' : 'line';
 }
 
 const BLOCK =
@@ -246,14 +262,16 @@ const SELECTED = 'outline-3 outline-offset-1 outline-ink';
 
 type VisitBlockProps = {
   visit: Visit;
-  tall: boolean;
+  size: BlockSize;
   selected: boolean;
   dimmed: boolean;
   onSelect: () => void;
 };
 
-function VisitBlock({ visit, tall, selected, dimmed, onSelect }: VisitBlockProps) {
+function VisitBlock({ visit, size, selected, dimmed, onSelect }: VisitBlockProps) {
   const status = STATUS[visit.status];
+  const time = <span className="font-bold tabular-nums">{formatSpokenTime(visit.startsAt)}</span>;
+  const name = <span className="truncate font-bold">{visit.patientName}</span>;
   return (
     <button
       type="button"
@@ -261,16 +279,22 @@ function VisitBlock({ visit, tall, selected, dimmed, onSelect }: VisitBlockProps
       onClick={onSelect}
       className={`${BLOCK} ${status.block} ${selected ? `outline ${SELECTED}` : ''} ${dimmed ? 'opacity-35' : ''}`}
     >
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="font-bold tabular-nums">{formatSpokenTime(visit.startsAt)}</span>{' '}
-        <span className="truncate font-bold">{visit.patientName}</span>
-        {!tall && <StatusIcon status={visit.status} className="ml-auto" />}
-      </span>{' '}
-      {tall ? (
-        <span className="mt-0.5 flex items-center gap-1 text-xs">
-          <StatusIcon status={visit.status} />
-          {status.label}
+      {size === 'line' ? (
+        <span className="flex min-w-0 items-center gap-1.5">
+          {time} {name}
+          <StatusIcon status={visit.status} className="ml-auto" />
         </span>
+      ) : (
+        <>
+          <span className="flex items-center justify-between gap-1.5 text-xs">
+            {time}
+            <StatusIcon status={visit.status} />
+          </span>{' '}
+          {name}
+        </>
+      )}{' '}
+      {size === 'three-lines' ? (
+        <span className="mt-0.5 text-xs">{status.label}</span>
       ) : (
         <span className="sr-only">, {status.label}</span>
       )}
