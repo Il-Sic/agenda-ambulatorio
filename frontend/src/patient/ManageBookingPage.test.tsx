@@ -32,8 +32,9 @@ test('a patient finds a booking with its code and e-mail', async () => {
 
   await lookUp(user);
 
-  const slip = await screen.findByRole('region', { name: 'Promemoria della visita' });
-  expect(within(slip).getByText('lunedì 1 marzo 2027, ore 09:00')).toBeVisible();
+  const slip = await screen.findByRole('region', { name: 'Tagliando della visita' });
+  expect(within(slip).getByText('lunedì 1 marzo')).toBeVisible();
+  expect(within(slip).getByText('9:00')).toBeVisible();
   expect(within(slip).getByText('Confermata')).toBeVisible();
   expect(sentEmail).toEqual({ email: 'giulia.bianchi@example.com' });
 });

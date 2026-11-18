@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   addDays,
+  dayCard,
   dayKey,
   formatDayLong,
   formatDayShort,
@@ -32,6 +33,13 @@ describe('clinic dates', () => {
     expect(formatWhen('2027-03-02T08:00:00Z', monday)).toBe('domani alle 9:00');
     expect(formatWhen('2027-03-05T13:00:00Z', monday)).toBe('venerdì alle 14:00');
     expect(formatWhen('2027-03-08T08:00:00Z', monday)).toBe('lunedì 8 marzo alle 9:00');
+  });
+
+  test('a day card says today and tomorrow in words', () => {
+    const monday = '2027-03-01';
+    expect(dayCard('2027-03-01', monday)).toEqual({ weekday: 'oggi', date: '1 mar' });
+    expect(dayCard('2027-03-02', monday)).toEqual({ weekday: 'domani', date: '2 mar' });
+    expect(dayCard('2027-03-05', monday)).toEqual({ weekday: 'ven', date: '5 mar' });
   });
 
   test('today is the day it is at the clinic', () => {
