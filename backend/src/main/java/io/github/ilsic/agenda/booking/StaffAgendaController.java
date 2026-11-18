@@ -29,6 +29,17 @@ class StaffAgendaController {
     return agenda.day(date, doctorId);
   }
 
+  @GetMapping("/day-plan")
+  @Operation(
+      summary = "Draw a day for the front desk",
+      description =
+          "Every doctor with the hours they receive that day, the slots still free and the"
+              + " appointments, cancelled ones included. Free slots are offered only from now to"
+              + " the end of the 90-day booking horizon; a closure day has no hours.")
+  DayPlan dayPlan(@RequestParam LocalDate date) {
+    return agenda.plan(date);
+  }
+
   @PostMapping("/appointments/{id}/arrival")
   @Operation(summary = "Record that the patient has arrived")
   @ChangesAnAppointment

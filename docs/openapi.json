@@ -830,6 +830,55 @@
         "tags" : [ "Staff schedule" ]
       }
     },
+    "/api/v1/staff/day-plan" : {
+      "get" : {
+        "description" : "Every doctor with the hours they receive that day, the slots still free and the appointments, cancelled ones included. Free slots are offered only from now to the end of the 90-day booking horizon; a closure day has no hours.",
+        "operationId" : "dayPlan",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "date",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DayPlan"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          }
+        },
+        "summary" : "Draw a day for the front desk",
+        "tags" : [ "Staff agenda" ]
+      }
+    },
     "/api/v1/staff/doctors" : {
       "get" : {
         "operationId" : "doctors",
@@ -1242,6 +1291,59 @@
           }
         },
         "required" : [ "displayName", "role", "username" ]
+      },
+      "DayPlan" : {
+        "type" : "object",
+        "properties" : {
+          "closure" : {
+            "type" : "string"
+          },
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "doctors" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DoctorDay"
+            }
+          }
+        },
+        "required" : [ "closure", "date", "doctors" ]
+      },
+      "DoctorDay" : {
+        "type" : "object",
+        "properties" : {
+          "appointments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AgendaEntry"
+            }
+          },
+          "freeSlots" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Slot"
+            }
+          },
+          "hours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Slot"
+            }
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "specialty" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "appointments", "freeSlots", "hours", "id", "name", "specialty" ]
       },
       "DoctorSummary" : {
         "type" : "object",

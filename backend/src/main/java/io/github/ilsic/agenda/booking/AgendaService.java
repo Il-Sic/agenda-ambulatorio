@@ -2,6 +2,8 @@ package io.github.ilsic.agenda.booking;
 
 import io.github.ilsic.agenda.scheduling.DoctorDirectory;
 import io.github.ilsic.agenda.scheduling.DoctorSummary;
+import io.github.ilsic.agenda.scheduling.OpeningHours;
+import io.github.ilsic.agenda.scheduling.OpeningHours.WorkingPeriod;
 import io.github.ilsic.agenda.shared.ClinicTime;
 import java.time.Clock;
 import java.time.Instant;
@@ -20,18 +22,55 @@ class AgendaService {
 
   private final AppointmentRepository appointments;
   private final DoctorDirectory doctors;
+  private final OpeningHours openingHours;
+  private final FreeSlotFinder freeSlots;
   private final BookingEvents events;
   private final Clock clock;
 
   AgendaService(
       AppointmentRepository appointments,
       DoctorDirectory doctors,
+      OpeningHours openingHours,
+      FreeSlotFinder freeSlots,
       BookingEvents events,
       Clock clock) {
     this.appointments = appointments;
     this.doctors = doctors;
+    this.openingHours = openingHours;
+    this.freeSlots = freeSlots;
     this.events = events;
     this.clock = clock;
+  }
+
+  /** The day drawn for the front desk: every doctor, with hours, free slots and appointments. */
+  @Transactional(readOnly = true)
+  DayPlan plan(LocalDate date) {
+    Instant now = clock.instant();
+    List<AgendaEntry> appointments = day(date, null);
+    Map<Long, List<Slot>> hours =
+        openingHours.on(date).stream()
+            .collect(
+                Collectors.groupingBy(
+                    WorkingPeriod::doctorId,
+                    Collectors.mapping(
+                        period -> new Slot(period.startsAt(), period.endsAt()),
+                        Collectors.toList())));
+    Map<Long, List<Slot>> free =
+        BookingService.withinBookingHorizon(date, now) ? freeSlots.onDay(date, now) : Map.of();
+    List<DayPlan.DoctorDay> doctorDays =
+        doctors.all().stream()
+            .map(doctor ->
+                new DayPlan.DoctorDay(
+                    doctor.id(),
+                    doctor.name(),
+                    doctor.specialty(),
+                    hours.getOrDefault(doctor.id(), List.of()),
+                    free.getOrDefault(doctor.id(), List.of()),
+                    appointments.stream()
+                        .filter(appointment -> appointment.doctorId() == doctor.id())
+                        .toList()))
+            .toList();
+    return new DayPlan(date, openingHours.closure(date).orElse(""), doctorDays);
   }
 
   /** Appointments of one calendar day at the clinic, optionally of a single doctor. */

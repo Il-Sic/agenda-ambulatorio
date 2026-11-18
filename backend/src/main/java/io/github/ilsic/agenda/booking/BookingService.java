@@ -141,6 +141,11 @@ class BookingService {
         .orElseThrow(SlotNotAvailableException::new);
   }
 
+  /** Whether patients can book on a day now: from today to the end of the booking horizon. */
+  static boolean withinBookingHorizon(LocalDate day, Instant now) {
+    return !day.isBefore(firstBookableDay(now)) && !day.isAfter(lastBookableDay(now));
+  }
+
   private static LocalDate firstBookableDay(Instant now) {
     return LocalDate.ofInstant(now, ClinicTime.ZONE);
   }

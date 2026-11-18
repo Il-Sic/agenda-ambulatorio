@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -85,6 +87,14 @@ class FreeSlotFinder {
            ORDER BY doctor_id, starts_at
           """;
 
+  private static final String FREE_SLOTS_OF_EVERY_DOCTOR =
+      FREE.formatted("")
+          + """
+          SELECT doctor_id, starts_at, ends_at
+            FROM free
+           ORDER BY doctor_id, starts_at
+          """;
+
   private final JdbcClient jdbc;
 
   FreeSlotFinder(JdbcClient jdbc) {
@@ -101,6 +111,25 @@ class FreeSlotFinder {
         .param("after", after.atOffset(ZoneOffset.UTC))
         .query((row, rowNumber) -> new Slot(instant(row, "starts_at"), instant(row, "ends_at")))
         .list();
+  }
+
+  /** Free slots of every doctor on one calendar day that start after a moment, by doctor. */
+  Map<Long, List<Slot>> onDay(LocalDate day, Instant after) {
+    return jdbc
+        .sql(FREE_SLOTS_OF_EVERY_DOCTOR)
+        .param("from", day)
+        .param("to", day)
+        .param("zone", ClinicTime.ZONE.getId())
+        .param("after", after.atOffset(ZoneOffset.UTC))
+        .query((row, rowNumber) ->
+            Map.entry(
+                row.getLong("doctor_id"),
+                new Slot(instant(row, "starts_at"), instant(row, "ends_at"))))
+        .list()
+        .stream()
+        .collect(
+            Collectors.groupingBy(
+                Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
   }
 
   /**
