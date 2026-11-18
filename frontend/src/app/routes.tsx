@@ -11,6 +11,15 @@ const loading = <p className="p-8 text-ink-soft">Caricamento…</p>;
 
 export const routes: RouteObject[] = [
   {
+    // The screen of the waiting room: a page of its own, without the site's header.
+    path: '/sala',
+    lazy: async () => ({
+      Component: (await import('../waiting-room/WaitingRoomPage')).WaitingRoomPage,
+    }),
+    hydrateFallbackElement: loading,
+    errorElement: <ErrorPage />,
+  },
+  {
     path: '/segreteria',
     lazy: async () => ({ Component: (await staff()).StaffArea }),
     hydrateFallbackElement: loading,

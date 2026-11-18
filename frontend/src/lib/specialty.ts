@@ -40,6 +40,15 @@ export function lineName(specialty: string | undefined): string {
   return lineOf(specialty).name;
 }
 
+/**
+ * Where to go from the waiting room, as the screen says it: "Primo piano, segui la linea rossa".
+ * Without a floor, only the line.
+ */
+export function directions(floor: string, specialty: string): string {
+  const line = `segui la linea ${lineName(specialty)}`;
+  return floor ? `${floor}, ${line}` : `S${line.slice(1)}`;
+}
+
 // A specialty added later still gets a colour, and always the same one.
 function hash(text: string): number {
   let sum = 0;
