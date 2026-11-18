@@ -63,6 +63,7 @@ class AgendaService {
                 new DayPlan.DoctorDay(
                     doctor.id(),
                     doctor.name(),
+                    doctor.lastName(),
                     doctor.specialty(),
                     hours.getOrDefault(doctor.id(), List.of()),
                     free.getOrDefault(doctor.id(), List.of()),

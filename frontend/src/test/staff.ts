@@ -22,6 +22,6 @@ export function problem(status: number, type: string) {
 }
 
 export const DOCTORS = [
-  { id: 6, name: 'Dott. Luca Ferri', specialty: 'Ortopedia' },
-  { id: 2, name: 'Dott.ssa Elena Marchetti', specialty: 'Cardiologia' },
+  { id: 6, name: 'Dott. Luca Ferri', lastName: 'Ferri', specialty: 'Ortopedia' },
+  { id: 2, name: 'Dott.ssa Elena Marchetti', lastName: 'Marchetti', specialty: 'Cardiologia' },
 ];

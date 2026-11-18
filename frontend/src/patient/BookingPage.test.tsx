@@ -22,7 +22,12 @@ beforeEach(() => {
     http.get('*/api/v1/doctors', ({ request }) => {
       expect(new URL(request.url).searchParams.get('specialtyId')).toBe('1');
       return HttpResponse.json([
-        { id: 7, name: 'Dott.ssa Elena Marchetti', specialty: 'Cardiologia' },
+        {
+          id: 7,
+          name: 'Dott.ssa Elena Marchetti',
+          lastName: 'Marchetti',
+          specialty: 'Cardiologia',
+        },
       ]);
     }),
     http.get('*/api/v1/doctors/first-free-slots', () =>

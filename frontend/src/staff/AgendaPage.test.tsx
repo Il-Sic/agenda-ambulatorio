@@ -30,6 +30,7 @@ function doctor(day: string, overrides: object = {}) {
   return {
     id: 2,
     name: 'Dott.ssa Elena Marchetti',
+    lastName: 'Marchetti',
     specialty: 'Cardiologia',
     // 9:00 to 13:00 in Rome, in winter.
     hours: [{ startsAt: `${day}T08:00:00Z`, endsAt: `${day}T12:00:00Z` }],
@@ -59,6 +60,7 @@ test('draws the day doctor by doctor, with each visit and its status', async () 
         doctor(PAST_DAY, {
           id: 6,
           name: 'Dott. Luca Ferri',
+          lastName: 'Ferri',
           specialty: 'Ortopedia',
           appointments: [
             visit({
@@ -76,6 +78,7 @@ test('draws the day doctor by doctor, with each visit and its status', async () 
         doctor(PAST_DAY, {
           id: 9,
           name: 'Dott. Andrea Vitale',
+          lastName: 'Vitale',
           specialty: 'Oculistica',
           hours: [],
         }),
@@ -87,6 +90,8 @@ test('draws the day doctor by doctor, with each visit and its status', async () 
 
   expect(await screen.findByRole('heading', { name: 'lunedì 12 gennaio 2026' })).toBeVisible();
   const marchetti = await screen.findByRole('region', { name: 'Dott.ssa Elena Marchetti' });
+  // The column is headed by the surname: the full name does not fit in it.
+  expect(within(marchetti).getByText('Marchetti')).toBeVisible();
   expect(within(marchetti).getByRole('button', { name: /Giulia Bianchi/ })).toHaveTextContent(
     '9:00 Giulia Bianchi In attesa',
   );
@@ -221,11 +226,11 @@ test('books a free slot for a patient on the phone', async () => {
   );
   const { user } = renderApp(`/segreteria?giorno=${FUTURE_DAY}`);
 
-  await user.click(
-    await screen.findByRole('button', {
-      name: '10:30 libero, prenota con Dott.ssa Elena Marchetti',
-    }),
-  );
+  const free = await screen.findByRole('button', {
+    name: '10:30 libero, prenota con Dott.ssa Elena Marchetti',
+  });
+  expect(screen.getByText('1 posto libero')).toBeVisible();
+  await user.click(free);
   await user.type(screen.getByLabelText('Nome e cognome'), 'Rosa Ferraro');
   await user.type(screen.getByLabelText('Telefono'), '333 0000199');
   await user.type(screen.getByLabelText('Email'), 'rosa.ferraro@example.com');

@@ -103,7 +103,8 @@ export function AgendaPage() {
     selection?.kind === 'visit' ? visits.find((visit) => visit.code === selection.code) : undefined;
   const chosenDoctor =
     selection?.kind === 'free' ? doctors.find(({ id }) => id === selection.doctorId) : undefined;
-  const specialtyOf = (doctorId: number) => doctors.find(({ id }) => id === doctorId)?.specialty;
+  const doctorOf = (doctorId: number) => doctors.find(({ id }) => id === doctorId);
+  const specialtyOf = (doctorId: number) => doctorOf(doctorId)?.specialty;
   const expected = visits
     .filter((visit) => visit.status === 'BOOKED' && new Date(visit.endsAt) > now)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
@@ -242,7 +243,7 @@ export function AgendaPage() {
             {!chosenVisit && selection?.kind !== 'free' && day === today && (
               <NextArrivals
                 visits={expected}
-                specialtyOf={specialtyOf}
+                doctorOf={doctorOf}
                 busy={change.isPending}
                 onArrived={(visit) => {
                   change.mutate({ action: 'arrival', visit });
