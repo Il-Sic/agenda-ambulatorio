@@ -132,6 +132,7 @@ Every important decision has a page explaining context, decision, consequences a
 | [Outbox instead of publishing directly](docs/adr/0005-transactional-outbox.md) | No lost events and no events for data that was never saved |
 | [Wayfinding as the visual language](docs/adr/0006-wayfinding-as-visual-language.md) | Coloured lines as structure, the ticket as the only object |
 | [The waiting room calls numbers](docs/adr/0007-waiting-room-calls.md) | Never a name on the screen; numbers without duplicates or gaps; screens that ask every few seconds |
+| [A Helm chart with its own manifests](docs/adr/0008-helm-chart.md) | PostgreSQL and Kafka written in the chart and replaceable by existing services; least privilege; a password generated once |
 
 Stack: Java 25, Spring Boot 4.1, PostgreSQL 18, Liquibase, Kafka 4.4 in KRaft mode, React 19, TypeScript, Vite, TanStack Query, React Hook Form with Zod, Tailwind CSS.
 
@@ -185,6 +186,29 @@ cd backend && ./mvnw test -Dtest=OpenApiSpecTest -Dopenapi.update=true   # updat
 cd ../frontend && npm run api:generate                                   # updates the TypeScript types
 ```
 
+## On Kubernetes
+
+The Helm chart in [`deploy/helm/agenda-ambulatorio`](deploy/helm/agenda-ambulatorio) installs the backend and the frontend and, for a self-contained demo, PostgreSQL and a single Kafka node too. I tried it on a local cluster made with [kind](https://kind.sigs.k8s.io/): install, upgrade, uninstall and reinstall, and the whole end-to-end suite through a port-forward.
+
+```bash
+kind create cluster --name agenda
+docker compose build
+docker save agenda-ambulatorio-backend:latest agenda-ambulatorio-frontend:latest -o /tmp/agenda.tar
+kind load image-archive /tmp/agenda.tar --name agenda
+helm install demo deploy/helm/agenda-ambulatorio --wait
+kubectl port-forward service/demo-agenda-ambulatorio-frontend 8080:8080
+```
+
+Then <http://localhost:8080>, as with Docker Compose. The images are not published to a registry, which is why they go through an archive loaded into the cluster.
+
+| To | Values |
+|---|---|
+| Use an existing database and Kafka | `postgresql.enabled=false` with `postgresql.external.host` and `postgresql.existingSecret`; `kafka.enabled=false` with `kafka.external.bootstrapServers` |
+| Open the site on a domain with HTTPS | `ingress.enabled=true`, `ingress.host`, `ingress.tls=true` with `ingress.tlsSecretName`: the session cookie becomes `Secure` |
+| Start without the demo data | `demoData=false`: note that without demo data there is no front desk account at all |
+
+The database password is generated at install and kept on upgrade. Every container runs without root and without Linux capabilities, with a read-only root filesystem where the image allows; the backend has separate health checks for "alive" and "ready". The choices are explained in [ADR 8](docs/adr/0008-helm-chart.md).
+
 ## Known limits and what I would do next
 
 - **Sessions in memory.** It works with a single backend instance. For more I would add Spring Session on JDBC or Redis.
@@ -195,7 +219,7 @@ cd ../frontend && npm run api:generate                                   # updat
 - **An event that cannot be processed is dropped after ten attempts in quick succession.** That is right for an unreadable message; if the database stays down longer, that e-mail is lost. I would add retries spaced out over time and a topic for messages that cannot be processed.
 - **Single-node Kafka and plain HTTP.** Fine for a demo, not for production.
 - **Screens that ask every few seconds.** The waiting room screen and the patient's phone ask for news every 3 to 5 seconds. With many screens I would move to Server-Sent Events, with the news shared between instances.
-- **Docker Compose only.** To run it on Kubernetes I would add a Helm chart.
+- **Images not published.** The Helm chart finds them in the cluster or in a registry named in the values. The next step is publishing them from CI, with a version for every release.
 
 ## License
 

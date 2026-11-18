@@ -132,6 +132,7 @@ Ogni decisione importante ha una pagina che spiega contesto, scelta, conseguenze
 | [Outbox invece della pubblicazione diretta](docs/adr/0005-transactional-outbox.md) | Nessun evento perso e nessun evento per dati mai salvati |
 | [La segnaletica come linguaggio visivo](docs/adr/0006-wayfinding-as-visual-language.md) | Linee colorate come struttura, il tagliando come unico oggetto |
 | [La sala d'attesa chiama numeri](docs/adr/0007-waiting-room-calls.md) | Mai un nome sullo schermo; numeri senza doppioni né buchi; schermi che chiedono ogni pochi secondi |
+| [Un chart Helm con manifest propri](docs/adr/0008-helm-chart.md) | PostgreSQL e Kafka scritti nel chart e sostituibili con servizi esistenti; privilegi minimi; password generata una volta |
 
 Stack: Java 25, Spring Boot 4.1, PostgreSQL 18, Liquibase, Kafka 4.4 in modalità KRaft, React 19, TypeScript, Vite, TanStack Query, React Hook Form con Zod, Tailwind CSS.
 
@@ -185,6 +186,29 @@ cd backend && ./mvnw test -Dtest=OpenApiSpecTest -Dopenapi.update=true   # aggio
 cd ../frontend && npm run api:generate                                   # aggiorna i tipi TypeScript
 ```
 
+## Su Kubernetes
+
+Il chart Helm in [`deploy/helm/agenda-ambulatorio`](deploy/helm/agenda-ambulatorio) installa backend e frontend e, per una demo autonoma, anche PostgreSQL e un nodo Kafka. L'ho provato su un cluster locale creato con [kind](https://kind.sigs.k8s.io/): installazione, aggiornamento, disinstallazione e reinstallazione, e tutti i test end to end attraverso un port-forward.
+
+```bash
+kind create cluster --name agenda
+docker compose build
+docker save agenda-ambulatorio-backend:latest agenda-ambulatorio-frontend:latest -o /tmp/agenda.tar
+kind load image-archive /tmp/agenda.tar --name agenda
+helm install demo deploy/helm/agenda-ambulatorio --wait
+kubectl port-forward service/demo-agenda-ambulatorio-frontend 8080:8080
+```
+
+Poi <http://localhost:8080>, come con Docker Compose. Le immagini non sono pubblicate su un registro, per questo passano da un archivio caricato nel cluster.
+
+| Per | Valori |
+|---|---|
+| Usare un database e un Kafka già esistenti | `postgresql.enabled=false` con `postgresql.external.host` e `postgresql.existingSecret`; `kafka.enabled=false` con `kafka.external.bootstrapServers` |
+| Aprire il sito con un dominio e HTTPS | `ingress.enabled=true`, `ingress.host`, `ingress.tls=true` con `ingress.tlsSecretName`: il cookie di sessione diventa `Secure` |
+| Partire senza dati di esempio | `demoData=false`: attenzione, senza dati di esempio non c'è nessun account della segreteria |
+
+La password del database viene generata all'installazione e conservata negli aggiornamenti. Ogni container gira senza privilegi di root e senza capability Linux, con il filesystem in sola lettura dove l'immagine lo permette; il backend ha controlli di salute distinti per «vivo» e «pronto». Le scelte sono spiegate nell'[ADR 8](docs/adr/0008-helm-chart.md).
+
 ## Limiti noti e cosa farei dopo
 
 - **Sessioni in memoria.** Funziona con una sola istanza del backend. Per averne di più aggiungerei Spring Session su JDBC o Redis.
@@ -195,7 +219,7 @@ cd ../frontend && npm run api:generate                                   # aggio
 - **Un evento che non si riesce a elaborare viene scartato dopo dieci tentativi ravvicinati.** Va bene per un messaggio illeggibile; se invece il database resta fermo più a lungo, quell'email si perde. Aggiungerei tentativi distanziati nel tempo e un topic per i messaggi non elaborabili.
 - **Kafka a un solo nodo e HTTP in chiaro.** Va bene per una demo, non per la produzione.
 - **Schermi che chiedono ogni pochi secondi.** Lo schermo della sala e il telefono del paziente chiedono le novità ogni 3–5 secondi. Con molti schermi passerei a Server-Sent Events, con le novità condivise tra le istanze.
-- **Solo Docker Compose.** Per portarlo su Kubernetes aggiungerei un chart Helm.
+- **Immagini non pubblicate.** Il chart Helm le trova nel cluster o in un registro indicato nei valori. Il passo successivo è pubblicarle dalla CI, con una versione per ogni rilascio.
 
 ## Licenza
 
