@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
   addDays,
+  clockTime,
   dayCard,
+  minutesOfDay,
   dayKey,
   formatDayLong,
   formatDayShort,
@@ -33,6 +35,13 @@ describe('clinic dates', () => {
     expect(formatWhen('2027-03-02T08:00:00Z', monday)).toBe('domani alle 9:00');
     expect(formatWhen('2027-03-05T13:00:00Z', monday)).toBe('venerdì alle 14:00');
     expect(formatWhen('2027-03-08T08:00:00Z', monday)).toBe('lunedì 8 marzo alle 9:00');
+  });
+
+  test('the minutes of the day are counted at the clinic, across clock changes', () => {
+    expect(minutesOfDay('2027-03-01T08:30:00Z')).toBe(570);
+    expect(minutesOfDay('2027-07-05T08:30:00Z')).toBe(630);
+    expect(clockTime(570)).toBe('9:30');
+    expect(clockTime(780)).toBe('13:00');
   });
 
   test('a day card says today and tomorrow in words', () => {

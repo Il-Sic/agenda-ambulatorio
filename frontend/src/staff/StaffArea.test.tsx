@@ -3,12 +3,17 @@ import { http, HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
-import { DOCTORS, problem, signedInAs } from '../test/staff';
+import { problem, signedInAs } from '../test/staff';
 
 function agendaIsEmpty() {
   server.use(
-    http.get('*/api/v1/staff/agenda', () => HttpResponse.json([])),
-    http.get('*/api/v1/staff/doctors', () => HttpResponse.json(DOCTORS)),
+    http.get('*/api/v1/staff/day-plan', ({ request }) =>
+      HttpResponse.json({
+        date: new URL(request.url).searchParams.get('date'),
+        closure: '',
+        doctors: [],
+      }),
+    ),
   );
 }
 
@@ -90,8 +95,7 @@ test('signing out goes back to the sign-in page', async () => {
 test('when the session expires the next request leads back to the sign-in page', async () => {
   signedInAs('STAFF');
   server.use(
-    http.get('*/api/v1/staff/doctors', () => HttpResponse.json(DOCTORS)),
-    http.get('*/api/v1/staff/agenda', () => {
+    http.get('*/api/v1/staff/day-plan', () => {
       // From now on the server no longer knows this browser.
       server.use(http.get('*/api/v1/auth/me', () => problem(401, '/problems/unauthenticated')));
       return problem(401, '/problems/unauthenticated');

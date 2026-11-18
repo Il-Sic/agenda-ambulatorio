@@ -20,13 +20,18 @@ test('the staff cancel a visit and the patient is told by e-mail', async ({ page
   expect(sessionCookie?.sameSite).toBe('Lax');
 
   await page.goto(`/segreteria?giorno=${clinicDay(booking.startsAt)}`);
-  const visit = page.getByRole('listitem').filter({ hasText: patient.name });
+  const doctor = page.getByRole('region', { name: 'Dott.ssa Marta Gentile' });
+  const visit = doctor.getByRole('button', { name: new RegExp(patient.name) });
   await expect(visit).toContainText('In attesa');
   await expectNoAccessibilityViolations(page);
 
-  await page.getByRole('button', { name: `Annulla visita: ${patient.name}` }).click();
-  await page.getByRole('button', { name: 'Sì, annulla la visita' }).click();
-  await expect(visit).toContainText('Annullata');
+  await visit.click();
+  const details = page.getByRole('region', { name: patient.name });
+  await expect(details).toContainText(booking.code);
+  await details.getByRole('button', { name: `Annulla visita: ${patient.name}` }).click();
+  await details.getByRole('button', { name: 'Sì, annulla la visita' }).click();
+  await expect(page.getByRole('region', { name: 'Annullate' })).toContainText(patient.name);
+  await expect(visit).toHaveCount(0);
 
   // The cancellation becomes an event, goes through Kafka and comes back as an e-mail.
   await page.getByRole('link', { name: 'Notifiche inviate' }).click();
