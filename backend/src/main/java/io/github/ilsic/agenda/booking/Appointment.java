@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.function.IntSupplier;
 
 @Entity
 class Appointment {
@@ -30,6 +31,15 @@ class Appointment {
   private Instant createdAt;
   private String idempotencyKey;
   private Instant reminderSentAt;
+
+  /** The day of the number below; both are null until the patient arrives on the visit day. */
+  private LocalDate callDay;
+
+  /** What the waiting room screen calls instead of the patient's name. */
+  private Integer callNumber;
+
+  /** The last time the number was called to the doctor's room, or null if not yet. */
+  private Instant calledAt;
 
   /** Two people changing the same appointment at once: the second one fails instead of winning. */
   @Version private int version;
@@ -100,25 +110,48 @@ class Appointment {
     reminderSentAt = now;
   }
 
-  void markArrived(Instant now) {
+  /**
+   * The patient has come. On the day of the visit they also take the next number of that day, once:
+   * the waiting room screen will call the number, never the name. An arrival recorded afterwards,
+   * for the books, takes no number.
+   */
+  void markArrived(Instant now, IntSupplier nextNumberOfTheDay) {
     recordOutcome(AppointmentStatus.ARRIVED, now);
+    LocalDate today = dayOf(now);
+    if (callNumber == null && today.equals(dayOf(slot.startsAt()))) {
+      callDay = today;
+      callNumber = nextNumberOfTheDay.getAsInt();
+    }
   }
 
   void markNoShow(Instant now) {
     recordOutcome(AppointmentStatus.NO_SHOW, now);
   }
 
+  /** The doctor is ready: the number goes on the screen. Calling again brings it back on top. */
+  void call(Instant now) {
+    if (status != AppointmentStatus.ARRIVED || callNumber == null) {
+      throw new AppointmentStateException("Only a patient waiting with a number can be called");
+    }
+    if (!callDay.equals(dayOf(now))) {
+      throw new AppointmentStateException("A number can only be called on the day it was given");
+    }
+    calledAt = now;
+  }
+
   private void recordOutcome(AppointmentStatus outcome, Instant now) {
     if (status == AppointmentStatus.CANCELLED) {
       throw new AppointmentStateException("A cancelled appointment has no outcome");
     }
-    LocalDate today = LocalDate.ofInstant(now, ClinicTime.ZONE);
-    LocalDate dayOfTheVisit = LocalDate.ofInstant(slot.startsAt(), ClinicTime.ZONE);
-    if (today.isBefore(dayOfTheVisit)) {
+    if (dayOf(now).isBefore(dayOf(slot.startsAt()))) {
       throw new AppointmentStateException(
           "The outcome can only be recorded from the day of the visit");
     }
     status = outcome;
+  }
+
+  private static LocalDate dayOf(Instant instant) {
+    return LocalDate.ofInstant(instant, ClinicTime.ZONE);
   }
 
   Long id() {
@@ -152,5 +185,15 @@ class Appointment {
 
   Instant createdAt() {
     return createdAt;
+  }
+
+  /** The number given at arrival on the day of the visit, or null. */
+  Integer callNumber() {
+    return callNumber;
+  }
+
+  /** When the number was last called, or null. */
+  Instant calledAt() {
+    return calledAt;
   }
 }

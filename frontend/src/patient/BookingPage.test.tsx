@@ -82,6 +82,10 @@ test('a patient who already booked opens the booking from the home page', async 
         doctorName: 'Dott.ssa Elena Marchetti',
         specialty: 'Cardiologia',
         patientName: 'Giulia Bianchi',
+        callNumber: null,
+        calledAt: null,
+        room: 'Ambulatorio 4',
+        floor: 'Primo piano',
       });
     }),
   );
@@ -114,6 +118,10 @@ test('a patient books a visit step by step and gets a booking code', async () =>
           doctorName: 'Dott.ssa Elena Marchetti',
           specialty: 'Cardiologia',
           patientName: 'Giulia Bianchi',
+          callNumber: null,
+          calledAt: null,
+          room: 'Ambulatorio 4',
+          floor: 'Primo piano',
         },
         { status: 201 },
       );
@@ -300,6 +308,10 @@ test('a retry after a lost connection repeats the same idempotency key', async (
           doctorName: 'Dott.ssa Elena Marchetti',
           specialty: 'Cardiologia',
           patientName: 'Giulia Bianchi',
+          callNumber: null,
+          calledAt: null,
+          room: 'Ambulatorio 4',
+          floor: 'Primo piano',
         },
         { status: 201 },
       );

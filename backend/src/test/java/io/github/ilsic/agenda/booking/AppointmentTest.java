@@ -10,6 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntSupplier;
 import org.junit.jupiter.api.Test;
 
 class AppointmentTest {
@@ -23,6 +25,9 @@ class AppointmentTest {
 
   private final Appointment appointment =
       Appointment.book("ABCD2345", 7L, SLOT, PATIENT, TWO_DAYS_BEFORE);
+
+  /** The desk's numbers of the day: 1, 2, 3 and so on. */
+  private final IntSupplier numbers = new AtomicInteger()::incrementAndGet;
 
   @Test
   void canBeMovedBeforeItStartsKeepingItsCode() {
@@ -86,14 +91,14 @@ class AppointmentTest {
   void arrivalCanBeRecordedOnTheDayOfTheVisit() {
     Instant halfPastSevenThatMorning = Instant.parse("2027-03-01T06:30:00Z");
 
-    appointment.markArrived(halfPastSevenThatMorning);
+    appointment.markArrived(halfPastSevenThatMorning, numbers);
 
     assertThat(appointment.status()).isEqualTo(ARRIVED);
   }
 
   @Test
   void arrivalCannotBeRecordedBeforeTheDayOfTheVisit() {
-    assertThatThrownBy(() -> appointment.markArrived(TWO_DAYS_BEFORE))
+    assertThatThrownBy(() -> appointment.markArrived(TWO_DAYS_BEFORE, numbers))
         .isInstanceOf(AppointmentStateException.class);
   }
 
@@ -111,7 +116,7 @@ class AppointmentTest {
   void aRecordedOutcomeCanBeCorrected() {
     appointment.markNoShow(START);
 
-    appointment.markArrived(START);
+    appointment.markArrived(START, numbers);
 
     assertThat(appointment.status()).isEqualTo(ARRIVED);
   }
@@ -119,7 +124,7 @@ class AppointmentTest {
   @Test
   void cannotBeCancelledOnceAnOutcomeIsRecorded() {
     Instant halfPastSevenThatMorning = Instant.parse("2027-03-01T06:30:00Z");
-    appointment.markArrived(halfPastSevenThatMorning);
+    appointment.markArrived(halfPastSevenThatMorning, numbers);
 
     assertThatThrownBy(() -> appointment.cancel(halfPastSevenThatMorning))
         .isInstanceOf(AppointmentStateException.class);
@@ -129,7 +134,70 @@ class AppointmentTest {
   void noOutcomeCanBeRecordedOnceCancelled() {
     appointment.cancel(TWO_DAYS_BEFORE);
 
-    assertThatThrownBy(() -> appointment.markArrived(START))
+    assertThatThrownBy(() -> appointment.markArrived(START, numbers))
         .isInstanceOf(AppointmentStateException.class);
+  }
+
+  @Test
+  void aPatientWhoArrivesOnTheDayOfTheVisitTakesTheNextNumberOfThatDay() {
+    numbers.getAsInt();
+
+    appointment.markArrived(START, numbers);
+
+    assertThat(appointment.callNumber()).isEqualTo(2);
+    assertThat(appointment.calledAt()).isNull();
+  }
+
+  @Test
+  void thePatientKeepsTheNumberWhenTheArrivalIsRecordedAgain() {
+    appointment.markArrived(START, numbers);
+    appointment.markNoShow(START);
+
+    appointment.markArrived(START, numbers);
+
+    assertThat(appointment.callNumber()).isEqualTo(1);
+  }
+
+  @Test
+  void anArrivalRecordedOnALaterDayTakesNoNumber() {
+    appointment.markArrived(START.plus(1, DAYS), numbers);
+
+    assertThat(appointment.status()).isEqualTo(ARRIVED);
+    assertThat(appointment.callNumber()).isNull();
+  }
+
+  @Test
+  void callingThePatientRecordsWhenAndCanBeRepeated() {
+    appointment.markArrived(START, numbers);
+
+    appointment.call(START);
+    appointment.call(START.plus(5, MINUTES));
+
+    assertThat(appointment.calledAt()).isEqualTo(START.plus(5, MINUTES));
+  }
+
+  @Test
+  void onlyAPatientWaitingWithANumberCanBeCalled() {
+    assertThatThrownBy(() -> appointment.call(START)).isInstanceOf(AppointmentStateException.class);
+
+    appointment.markArrived(START.plus(1, DAYS), numbers);
+    assertThatThrownBy(() -> appointment.call(START.plus(1, DAYS)))
+        .isInstanceOf(AppointmentStateException.class);
+  }
+
+  @Test
+  void aNumberIsCalledOnlyOnTheDayItWasGiven() {
+    appointment.markArrived(START, numbers);
+
+    assertThatThrownBy(() -> appointment.call(START.plus(1, DAYS)))
+        .isInstanceOf(AppointmentStateException.class);
+  }
+
+  @Test
+  void aPatientMarkedAsNotShownCannotBeCalled() {
+    appointment.markArrived(START, numbers);
+    appointment.markNoShow(START);
+
+    assertThatThrownBy(() -> appointment.call(START)).isInstanceOf(AppointmentStateException.class);
   }
 }

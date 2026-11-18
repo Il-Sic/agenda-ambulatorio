@@ -1,6 +1,7 @@
 package io.github.ilsic.agenda.booking;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Limit;
@@ -36,4 +37,13 @@ interface AppointmentRepository extends JpaRepository<Appointment, Long> {
        order by a.slot.startsAt
       """)
   List<Appointment> dueForReminder(Instant now, Instant until, Limit limit);
+
+  /** The numbers called on a day, the latest call first. */
+  @Query(
+      """
+      select a from Appointment a
+       where a.callDay = :day and a.calledAt is not null
+       order by a.calledAt desc, a.callNumber desc
+      """)
+  List<Appointment> latestCalls(LocalDate day, Limit limit);
 }

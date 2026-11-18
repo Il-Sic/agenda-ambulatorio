@@ -15,8 +15,9 @@ import { dayOrUndefined } from '../lib/params';
 import { CallerBooking } from './agenda/CallerBooking';
 import { DayGrid, type Range, type Selection } from './agenda/DayGrid';
 import { NextArrivals } from './agenda/NextArrivals';
-import type { Visit } from './agenda/status';
+import { isWaitingWithANumber, type Visit } from './agenda/status';
 import { VisitPanel, type Action } from './agenda/VisitPanel';
+import { WaitingPatients } from './agenda/WaitingPatients';
 
 type DoctorDay = Schemas['DoctorDay'];
 type Part = 'mattina' | 'pomeriggio' | 'giornata';
@@ -35,6 +36,8 @@ function send(action: Action, id: number) {
   switch (action) {
     case 'arrival':
       return unwrap(api.POST('/api/v1/staff/appointments/{id}/arrival', params));
+    case 'call':
+      return unwrap(api.POST('/api/v1/staff/appointments/{id}/call', params));
     case 'no-show':
       return unwrap(api.POST('/api/v1/staff/appointments/{id}/no-show', params));
     case 'cancellation':
@@ -54,6 +57,7 @@ export function AgendaPage() {
   const [search, setSearch] = useState('');
   const [failure, setFailure] = useState<string>();
   const [booked, setBooked] = useState<string>();
+  const [done, setDone] = useState<string>();
 
   const plan = useQuery({
     queryKey: ['day-plan', day],
@@ -66,6 +70,10 @@ export function AgendaPage() {
     onMutate: () => {
       setFailure(undefined);
       setBooked(undefined);
+      setDone(undefined);
+    },
+    onSuccess: (visit, { action }) => {
+      setDone(doneMessage(action, visit));
     },
     onError: (error) => {
       setFailure(messageFor(error));
@@ -105,6 +113,9 @@ export function AgendaPage() {
     selection?.kind === 'free' ? doctors.find(({ id }) => id === selection.doctorId) : undefined;
   const doctorOf = (doctorId: number) => doctors.find(({ id }) => id === doctorId);
   const specialtyOf = (doctorId: number) => doctorOf(doctorId)?.specialty;
+  const waiting = visits
+    .filter((visit) => isWaitingWithANumber(visit) && visit.calledAt === null)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   const expected = visits
     .filter((visit) => visit.status === 'BOOKED' && new Date(visit.endsAt) > now)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
@@ -162,6 +173,7 @@ export function AgendaPage() {
       </div>
 
       {failure && <Notice kind="error">{failure}</Notice>}
+      {done && <Notice kind="success">{done}</Notice>}
       {booked && (
         <Notice kind="success">
           Prenotazione fatta, codice {booked}. Il paziente riceve il codice per email.
@@ -188,6 +200,7 @@ export function AgendaPage() {
                 matches={matches}
                 onSelect={(next) => {
                   setBooked(undefined);
+                  setDone(undefined);
                   setSelection(next);
                 }}
               />
@@ -241,6 +254,16 @@ export function AgendaPage() {
               />
             )}
             {!chosenVisit && selection?.kind !== 'free' && day === today && (
+              <WaitingPatients
+                visits={waiting}
+                doctorOf={doctorOf}
+                busy={change.isPending}
+                onCall={(visit) => {
+                  change.mutate({ action: 'call', visit });
+                }}
+              />
+            )}
+            {!chosenVisit && selection?.kind !== 'free' && day === today && (
               <NextArrivals
                 visits={expected}
                 doctorOf={doctorOf}
@@ -261,6 +284,21 @@ export function AgendaPage() {
       )}
     </div>
   );
+}
+
+/** What the desk needs to know after an action: on arrival, the number to give the patient. */
+function doneMessage(action: Action, visit: Visit): string | undefined {
+  if (visit.callNumber === null) {
+    return undefined;
+  }
+  const number = String(visit.callNumber);
+  if (action === 'arrival') {
+    return `Arrivo registrato: ${visit.patientName} ha il numero ${number}.`;
+  }
+  if (action === 'call') {
+    return `Numero ${number} chiamato: è sullo schermo della sala d’attesa.`;
+  }
+  return undefined;
 }
 
 /** Re-drawn every minute, so the line of the present moves on its own. */
@@ -327,7 +365,8 @@ function summary(doctors: DoctorDay[]): string {
   const arrived = count('ARRIVED');
   const missed = count('NO_SHOW');
   const parts = [`${String(arrived)} ${arrived === 1 ? 'arrivato' : 'arrivati'}`];
-  parts.push(`${String(count('BOOKED'))} in attesa`);
+  const toCome = count('BOOKED');
+  parts.push(`${String(toCome)} ${toCome === 1 ? 'atteso' : 'attesi'}`);
   if (missed > 0) {
     parts.push(`${String(missed)} ${missed === 1 ? 'non presentato' : 'non presentati'}`);
   }

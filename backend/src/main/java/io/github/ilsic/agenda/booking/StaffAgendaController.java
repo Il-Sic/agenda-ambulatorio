@@ -47,6 +47,17 @@ class StaffAgendaController {
     return agenda.markArrived(id);
   }
 
+  @PostMapping("/appointments/{id}/call")
+  @Operation(
+      summary = "Call the patient to the doctor's room",
+      description =
+          "Puts the number the patient took on arrival on the waiting room screen. Only a patient"
+              + " who arrived today can be called; calling again brings the number back on top.")
+  @ChangesAnAppointment
+  AgendaEntry call(@PathVariable long id) {
+    return agenda.call(id);
+  }
+
   @PostMapping("/appointments/{id}/no-show")
   @Operation(summary = "Record that the patient did not show up")
   @ChangesAnAppointment

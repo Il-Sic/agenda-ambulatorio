@@ -21,6 +21,9 @@
     "description" : "Specialties and doctors a patient can choose from",
     "name" : "Catalogue"
   }, {
+    "description" : "The screen that calls patients by number",
+    "name" : "Waiting room"
+  }, {
     "description" : "What a patient can do without an account",
     "name" : "Booking"
   }, {
@@ -568,6 +571,75 @@
           }
         },
         "summary" : "Record that the patient has arrived",
+        "tags" : [ "Staff agenda" ]
+      }
+    },
+    "/api/v1/staff/appointments/{id}/call" : {
+      "post" : {
+        "description" : "Puts the number the patient took on arrival on the waiting room screen. Only a patient who arrived today can be called; calling again brings the number back on top.",
+        "operationId" : "call",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AgendaEntry"
+                }
+              }
+            },
+            "description" : "The appointment after the change"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not signed in (type /problems/unauthenticated)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not allowed for this role, or CSRF token missing (type /problems/forbidden)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unknown appointment (type /problems/appointment-not-found)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The change makes no sense for the appointment as it is now (type /problems/appointment-state), or someone else changed it first (type /problems/concurrent-update)"
+          }
+        },
+        "summary" : "Call the patient to the doctor's room",
         "tags" : [ "Staff agenda" ]
       }
     },
@@ -1147,6 +1219,29 @@
         "summary" : "List the latest 50 e-mails sent to patients, newest first",
         "tags" : [ "Notifications" ]
       }
+    },
+    "/api/v1/waiting-room/calls" : {
+      "get" : {
+        "description" : "At most five. Numbers and rooms only: the screen is public and never shows a name. Meant to be asked every few seconds.",
+        "operationId" : "calls",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WaitingRoomCall"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Today's latest calls, the latest first",
+        "tags" : [ "Waiting room" ]
+      }
     }
   },
   "components" : {
@@ -1154,6 +1249,14 @@
       "AgendaEntry" : {
         "type" : "object",
         "properties" : {
+          "callNumber" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "calledAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
           "code" : {
             "type" : "string"
           },
@@ -1190,7 +1293,7 @@
             "enum" : [ "BOOKED", "ARRIVED", "NO_SHOW", "CANCELLED" ]
           }
         },
-        "required" : [ "code", "doctorId", "doctorName", "endsAt", "id", "patientEmail", "patientName", "patientPhone", "startsAt", "status" ]
+        "required" : [ "callNumber", "calledAt", "code", "doctorId", "doctorName", "endsAt", "id", "patientEmail", "patientName", "patientPhone", "startsAt", "status" ]
       },
       "AvailabilityRequest" : {
         "type" : "object",
@@ -1245,6 +1348,14 @@
       "BookingDetails" : {
         "type" : "object",
         "properties" : {
+          "callNumber" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "calledAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
           "code" : {
             "type" : "string"
           },
@@ -1259,7 +1370,13 @@
             "type" : "string",
             "format" : "date-time"
           },
+          "floor" : {
+            "type" : "string"
+          },
           "patientName" : {
+            "type" : "string"
+          },
+          "room" : {
             "type" : "string"
           },
           "specialty" : {
@@ -1274,7 +1391,7 @@
             "enum" : [ "BOOKED", "ARRIVED", "NO_SHOW", "CANCELLED" ]
           }
         },
-        "required" : [ "code", "doctorId", "doctorName", "endsAt", "patientName", "specialty", "startsAt", "status" ]
+        "required" : [ "callNumber", "calledAt", "code", "doctorId", "doctorName", "endsAt", "floor", "patientName", "room", "specialty", "startsAt", "status" ]
       },
       "BookingRequest" : {
         "type" : "object",
@@ -1413,6 +1530,9 @@
       "DoctorSummary" : {
         "type" : "object",
         "properties" : {
+          "floor" : {
+            "type" : "string"
+          },
           "id" : {
             "type" : "integer",
             "format" : "int64"
@@ -1423,11 +1543,14 @@
           "name" : {
             "type" : "string"
           },
+          "room" : {
+            "type" : "string"
+          },
           "specialty" : {
             "type" : "string"
           }
         },
-        "required" : [ "id", "lastName", "name", "specialty" ]
+        "required" : [ "floor", "id", "lastName", "name", "room", "specialty" ]
       },
       "EmailRequest" : {
         "type" : "object",
@@ -1575,6 +1698,29 @@
           }
         },
         "required" : [ "doctors", "id", "name" ]
+      },
+      "WaitingRoomCall" : {
+        "type" : "object",
+        "properties" : {
+          "calledAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "floor" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "room" : {
+            "type" : "string"
+          },
+          "specialty" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "calledAt", "floor", "number", "room", "specialty" ]
       }
     }
   }

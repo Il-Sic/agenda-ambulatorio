@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
+import { todayAtTheClinic } from '../lib/dates';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
 
@@ -13,6 +14,10 @@ const booking = {
   doctorName: 'Dott.ssa Elena Marchetti',
   specialty: 'Cardiologia',
   patientName: 'Giulia Bianchi',
+  callNumber: null,
+  calledAt: null,
+  room: 'Ambulatorio 4',
+  floor: 'Primo piano',
 };
 
 async function lookUp(user: ReturnType<typeof renderApp>['user']) {
@@ -116,4 +121,61 @@ test('the visit can be added to the calendar of the phone', async () => {
 
   expect(link).toHaveAttribute('download', 'visita-ABCD2345.ics');
   expect(decodeURIComponent(link.getAttribute('href') ?? '')).toContain('DTSTART:20270301T080000Z');
+});
+
+/** The visit is today, at ten or eleven in Rome: always today, whatever the hour of the test. */
+function today(overrides: object) {
+  const day = todayAtTheClinic();
+  return {
+    ...booking,
+    startsAt: `${day}T09:00:00Z`,
+    endsAt: `${day}T09:30:00Z`,
+    ...overrides,
+  };
+}
+
+test('on the day of the visit the patient sees the number taken at the desk', async () => {
+  server.use(
+    http.post('*/api/v1/bookings/ABCD2345/lookup', () =>
+      HttpResponse.json(today({ status: 'ARRIVED', callNumber: 12 })),
+    ),
+  );
+  const { user } = renderApp('/prenotazione');
+  await lookUp(user);
+
+  const number = await screen.findByRole('region', { name: 'Il tuo numero' });
+  expect(number).toHaveTextContent('12');
+  expect(number).toHaveTextContent('Ti chiamiamo sullo schermo della sala d’attesa e anche qui');
+});
+
+test('when the number is called the page says it is the patient’s turn and where to go', async () => {
+  server.use(
+    http.post('*/api/v1/bookings/ABCD2345/lookup', () =>
+      HttpResponse.json(
+        today({
+          status: 'ARRIVED',
+          callNumber: 12,
+          calledAt: new Date(Date.now() - 60_000).toISOString(),
+        }),
+      ),
+    ),
+  );
+  const { user } = renderApp('/prenotazione');
+  await lookUp(user);
+
+  const turn = await screen.findByRole('alert');
+  expect(within(turn).getByRole('heading', { name: 'È il tuo turno' })).toBeVisible();
+  expect(turn).toHaveTextContent('Ambulatorio 4');
+  expect(turn).toHaveTextContent('Primo piano, segui la linea rossa');
+  expect(document.title).toBe('È il tuo turno - Poliambulatorio Valdoria');
+});
+
+test('a visit on another day says nothing about numbers', async () => {
+  server.use(http.post('*/api/v1/bookings/ABCD2345/lookup', () => HttpResponse.json(booking)));
+  const { user } = renderApp('/prenotazione');
+  await lookUp(user);
+
+  await screen.findByRole('region', { name: 'Tagliando della visita' });
+  expect(screen.queryByRole('region', { name: 'Il tuo numero' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });

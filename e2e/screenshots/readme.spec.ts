@@ -57,6 +57,16 @@ test.describe('on a computer', () => {
     await capture(page, 'computer-prenotazione', true);
   });
 
+  test('the waiting room screen', async ({ page }) => {
+    // The size of a television, scaled down: the screen fills it exactly.
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/sala');
+    await page
+      .getByRole('region', { name: /Ora tocca al numero|Nessuna chiamata per ora/ })
+      .waitFor();
+    await capture(page, 'computer-sala', false);
+  });
+
   test('the staff area', async ({ page }) => {
     await page.goto('/segreteria');
     await page.getByLabel('Nome utente').fill('segreteria');

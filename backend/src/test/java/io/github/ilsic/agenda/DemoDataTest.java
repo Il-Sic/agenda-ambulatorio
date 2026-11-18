@@ -9,6 +9,7 @@ import io.github.ilsic.agenda.outbox.OutboxPublisher;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -98,6 +99,48 @@ class DemoDataTest {
             .single();
 
     assertThat(upcoming).isGreaterThanOrEqualTo(8);
+  }
+
+  @Test
+  void everyDemoDoctorReceivesInARoom() {
+    Long withoutARoom =
+        jdbc.sql("SELECT count(*) FROM doctor WHERE room IS NULL OR floor IS NULL")
+            .query(Long.class)
+            .single();
+
+    assertThat(withoutARoom).isZero();
+  }
+
+  /**
+   * Whatever the hour of the first start, today's patients who have arrived took their numbers in
+   * the order of their visits and were called when it started, so the waiting room screen has
+   * something to show; the next arrival goes on from the last number.
+   */
+  @Test
+  void todaysArrivalsHaveTheirNumbersAndWereCalled() {
+    List<Map<String, Object>> arrivals =
+        jdbc.sql(
+                """
+                SELECT call_number, called_at = starts_at AS called_when_it_started
+                  FROM appointment
+                 WHERE status = 'ARRIVED'
+                   AND CAST(starts_at AT TIME ZONE 'Europe/Rome' AS date)
+                       = CAST(now() AT TIME ZONE 'Europe/Rome' AS date)
+                 ORDER BY starts_at, id
+                """)
+            .query()
+            .listOfRows();
+    Long lastNumber =
+        jdbc.sql("SELECT coalesce(max(last_number), 0) FROM call_counter")
+            .query(Long.class)
+            .single();
+
+    for (int position = 0; position < arrivals.size(); position++) {
+      assertThat(arrivals.get(position))
+          .containsEntry("call_number", position + 1)
+          .containsEntry("called_when_it_started", true);
+    }
+    assertThat(lastNumber).isEqualTo(arrivals.size());
   }
 
   @Test

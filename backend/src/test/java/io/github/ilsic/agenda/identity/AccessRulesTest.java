@@ -30,6 +30,7 @@ class AccessRulesTest {
   void patientsNeedNoAccountToBrowse() {
     assertThat(mvc.get().uri("/api/v1/specialties")).hasStatusOk();
     assertThat(mvc.get().uri("/api/v1/first-free-slots")).hasStatusOk();
+    assertThat(mvc.get().uri("/api/v1/waiting-room/calls")).hasStatusOk();
     assertThat(mvc.get().uri("/actuator/health")).hasStatusOk();
     assertThat(mvc.get().uri("/v3/api-docs")).hasStatusOk();
   }
