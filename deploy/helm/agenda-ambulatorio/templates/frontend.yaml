@@ -1,0 +1,76 @@
+{{- $name := printf "%s-frontend" (include "agenda.fullname" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "agenda.labels" (dict "root" $ "component" "frontend") | nindent 4 }}
+spec:
+  selector:
+    {{- include "agenda.selectorLabels" (dict "root" $ "component" "frontend") | nindent 4 }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "agenda.labels" (dict "root" $ "component" "frontend") | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "agenda.selectorLabels" (dict "root" $ "component" "frontend") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agenda.labels" (dict "root" $ "component" "frontend") | nindent 8 }}
+    spec:
+      {{- include "agenda.podDefaults" . | nindent 6 }}
+      securityContext:
+        # The nginx user of the unprivileged image.
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        # Serves the pages and forwards /api to the backend: the browser sees a single origin.
+        - name: frontend
+          image: {{ include "agenda.image" .Values.frontend.image }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          env:
+            - name: BACKEND_URL
+              value: http://{{ include "agenda.fullname" . }}-backend:8080
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          securityContext:
+            {{- include "agenda.containerSecurity" . | nindent 12 }}
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            # nginx writes its configuration here at start, from the template in the image.
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: conf
+          emptyDir: {}

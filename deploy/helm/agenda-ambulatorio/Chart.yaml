@@ -1,0 +1,16 @@
+apiVersion: v2
+name: agenda-ambulatorio
+description: >-
+  Appointment booking for a fictional outpatient clinic: the Spring Boot backend, the React
+  frontend served by nginx and, for a self-contained demo, PostgreSQL and a single Kafka node.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/Il-Sic/agenda-ambulatorio
+sources:
+  - https://github.com/Il-Sic/agenda-ambulatorio
+keywords:
+  - spring-boot
+  - react
+  - postgresql
+  - kafka

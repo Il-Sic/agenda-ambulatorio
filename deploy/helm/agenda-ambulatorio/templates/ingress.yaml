@@ -1,0 +1,34 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "agenda.fullname" . }}
+  labels:
+    {{- include "agenda.labels" (dict "root" $ "component" "frontend") | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ required "ingress.tlsSecretName is needed when ingress.tls is true" .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # Everything goes to nginx, which forwards /api to the backend itself.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "agenda.fullname" . }}-frontend
+                port:
+                  name: http
+{{- end }}

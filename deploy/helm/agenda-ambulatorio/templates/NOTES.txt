@@ -1,0 +1,21 @@
+Poliambulatorio Valdoria is starting in namespace {{ .Release.Namespace }}.
+The first start takes a minute or two: the backend waits for the database and loads the schema.
+
+  kubectl --namespace {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }} --watch
+
+{{- if .Values.ingress.enabled }}
+
+Then open http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+
+Then make it reachable from this computer:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "agenda.fullname" . }}-frontend 8080:8080
+
+and open http://localhost:8080 (the front desk is at /segreteria, the waiting room screen at /sala).
+{{- end }}
+{{- if .Values.demoData }}
+
+Demo data is loaded, with the two demo accounts of the README: segreteria / segreteria-demo and
+admin / admin-demo. They are public knowledge, so keep this release away from the internet.
+{{- end }}
