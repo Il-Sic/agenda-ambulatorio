@@ -80,6 +80,22 @@ class Appointment {
     status = AppointmentStatus.CANCELLED;
   }
 
+  /**
+   * A booked visit that has not started yet takes another slot, in place: the code, the patient and
+   * the history stay the same. The reminder starts over for the new time.
+   */
+  void moveTo(Slot newSlot, Instant now) {
+    if (status != AppointmentStatus.BOOKED) {
+      throw new AppointmentStateException("Only a booked appointment can be moved");
+    }
+    if (!slot.startsAt().isAfter(now)) {
+      throw new AppointmentStateException(
+          "An appointment that has already started cannot be moved");
+    }
+    slot = newSlot;
+    reminderSentAt = null;
+  }
+
   void markReminded(Instant now) {
     reminderSentAt = now;
   }
@@ -119,6 +135,11 @@ class Appointment {
 
   Slot slot() {
     return slot;
+  }
+
+  /** When the patient was reminded of the visit, or null if not yet for its current time. */
+  Instant reminderSentAt() {
+    return reminderSentAt;
   }
 
   Patient patient() {

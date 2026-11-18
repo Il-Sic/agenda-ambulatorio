@@ -24,6 +24,18 @@ class EmailTemplatesTest {
   }
 
   @Test
+  void aMoveGivesTheNewTimeAndKeepsTheCode() {
+    Email email =
+        EmailTemplates.render(message("BOOKING_MOVED", "2027-03-02T13:30:00Z")).orElseThrow();
+
+    assertThat(email.subject()).isEqualTo("Visita spostata - codice ABCD2345");
+    assertThat(email.body())
+        .contains("è stata spostata")
+        .contains("Nuovo orario: martedì 2 marzo 2027 alle 14:30")
+        .contains("ABCD2345 (non cambia)");
+  }
+
+  @Test
   void summerTimeIsAppliedToTheHourThePatientReads() {
     // 08:00 UTC is 10:00 in Rome in July.
     Email email =

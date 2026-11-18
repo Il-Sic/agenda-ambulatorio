@@ -27,6 +27,10 @@ class BookingEvents {
     record(BookingEvent.Type.BOOKING_CANCELLED, appointment, doctor);
   }
 
+  void moved(Appointment appointment, DoctorSummary doctor) {
+    record(BookingEvent.Type.BOOKING_MOVED, appointment, doctor);
+  }
+
   void reminder(Appointment appointment, DoctorSummary doctor) {
     record(BookingEvent.Type.VISIT_REMINDER, appointment, doctor);
   }

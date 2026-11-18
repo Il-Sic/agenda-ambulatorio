@@ -25,6 +25,38 @@ class AppointmentTest {
       Appointment.book("ABCD2345", 7L, SLOT, PATIENT, TWO_DAYS_BEFORE);
 
   @Test
+  void canBeMovedBeforeItStartsKeepingItsCode() {
+    Slot later = new Slot(START.plus(1, DAYS), START.plus(1, DAYS).plus(30, MINUTES));
+
+    appointment.moveTo(later, TWO_DAYS_BEFORE);
+
+    assertThat(appointment.slot()).isEqualTo(later);
+    assertThat(appointment.code()).isEqualTo("ABCD2345");
+    assertThat(appointment.status()).isEqualTo(BOOKED);
+  }
+
+  @Test
+  void aMovedVisitIsRemindedAgainForItsNewTime() {
+    appointment.markReminded(START.minus(1, DAYS));
+
+    appointment.moveTo(
+        new Slot(START.plus(2, DAYS), START.plus(2, DAYS).plus(30, MINUTES)), START.minus(1, DAYS));
+
+    assertThat(appointment.reminderSentAt()).isNull();
+  }
+
+  @Test
+  void cannotBeMovedOnceItHasStartedOrIsCancelled() {
+    Slot later = new Slot(START.plus(1, DAYS), START.plus(1, DAYS).plus(30, MINUTES));
+
+    assertThatThrownBy(() -> appointment.moveTo(later, START))
+        .isInstanceOf(AppointmentStateException.class);
+    appointment.cancel(TWO_DAYS_BEFORE);
+    assertThatThrownBy(() -> appointment.moveTo(later, TWO_DAYS_BEFORE))
+        .isInstanceOf(AppointmentStateException.class);
+  }
+
+  @Test
   void startsAsBooked() {
     assertThat(appointment.status()).isEqualTo(BOOKED);
   }

@@ -209,6 +209,64 @@
         "tags" : [ "Booking" ]
       }
     },
+    "/api/v1/bookings/{code}/rescheduling" : {
+      "post" : {
+        "description" : "Given its code and the e-mail used to book. The visit keeps its code; asking again for the time it already has changes nothing.",
+        "operationId" : "reschedule",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReschedulingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingDetails"
+                }
+              }
+            },
+            "description" : "The booking at its new time"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Wrong code or wrong e-mail (type /problems/booking-not-found)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "The new slot is not offered or was just taken (type /problems/slot-not-available), or the visit is cancelled or already started (type /problems/appointment-state)"
+          }
+        },
+        "summary" : "Move a booking to another free slot of the same doctor",
+        "tags" : [ "Booking" ]
+      }
+    },
     "/api/v1/doctors" : {
       "get" : {
         "operationId" : "doctors_1",
@@ -1190,6 +1248,10 @@
           "code" : {
             "type" : "string"
           },
+          "doctorId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "doctorName" : {
             "type" : "string"
           },
@@ -1212,7 +1274,7 @@
             "enum" : [ "BOOKED", "ARRIVED", "NO_SHOW", "CANCELLED" ]
           }
         },
-        "required" : [ "code", "doctorName", "endsAt", "patientName", "specialty", "startsAt", "status" ]
+        "required" : [ "code", "doctorId", "doctorName", "endsAt", "patientName", "specialty", "startsAt", "status" ]
       },
       "BookingRequest" : {
         "type" : "object",
@@ -1459,6 +1521,21 @@
           }
         },
         "required" : [ "detail", "instance", "status", "title", "type" ]
+      },
+      "ReschedulingRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "minLength" : 1
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "email", "startsAt" ]
       },
       "Slot" : {
         "type" : "object",

@@ -116,6 +116,28 @@ class BookingController {
     return bookings.find(code, request.email());
   }
 
+  @PostMapping("/bookings/{code}/rescheduling")
+  @Operation(
+      summary = "Move a booking to another free slot of the same doctor",
+      description =
+          "Given its code and the e-mail used to book. The visit keeps its code; asking again"
+              + " for the time it already has changes nothing.")
+  @ApiResponse(responseCode = "200", description = "The booking at its new time")
+  @ApiResponse(
+      responseCode = "404",
+      description = "Wrong code or wrong e-mail (type /problems/booking-not-found)",
+      content = @Content(mediaType = PROBLEM, schema = @Schema(implementation = Problem.class)))
+  @ApiResponse(
+      responseCode = "409",
+      description =
+          "The new slot is not offered or was just taken (type /problems/slot-not-available),"
+              + " or the visit is cancelled or already started (type /problems/appointment-state)",
+      content = @Content(mediaType = PROBLEM, schema = @Schema(implementation = Problem.class)))
+  BookingDetails reschedule(
+      @PathVariable String code, @Valid @RequestBody ReschedulingRequest request) {
+    return bookings.reschedule(code, request.email(), request.startsAt());
+  }
+
   @PostMapping("/bookings/{code}/cancellation")
   @Operation(summary = "Cancel a booking, given its code and the e-mail used to book")
   @ApiResponse(responseCode = "200", description = "The cancelled booking")
